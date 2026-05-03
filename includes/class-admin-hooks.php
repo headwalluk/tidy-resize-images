@@ -34,6 +34,20 @@ class Admin_Hooks {
 	private const SETTINGS_HOOK_SUFFIX = 'toplevel_page_' . ADMIN_MENU_SLUG;
 
 	/**
+	 * Submenu slug for the Trash admin page.
+	 */
+	private const TRASH_MENU_SLUG = ADMIN_MENU_SLUG . '-trash';
+
+	/**
+	 * Hook suffix WordPress uses for our Trash submenu page.
+	 *
+	 * Format is `<parent-slug>_page_<submenu-slug>`.
+	 *
+	 * @var string
+	 */
+	private const TRASH_HOOK_SUFFIX = ADMIN_MENU_SLUG . '_page_' . ADMIN_MENU_SLUG . '-trash';
+
+	/**
 	 * Register the top-level admin menu entry.
 	 *
 	 * Hooked to admin_menu by Plugin::run().
@@ -52,6 +66,27 @@ class Admin_Hooks {
 			'dashicons-format-image',
 			80
 		);
+
+		// First submenu reuses the parent slug to override WordPress's
+		// auto-created duplicate entry — gives us a meaningful "Settings"
+		// label instead of repeating the parent's "Tidy Images".
+		add_submenu_page(
+			ADMIN_MENU_SLUG,
+			__( 'Tidy Resize Images — Settings', 'tidy-resize-images' ),
+			__( 'Settings', 'tidy-resize-images' ),
+			ADMIN_CAPABILITY,
+			ADMIN_MENU_SLUG,
+			array( $this, 'render_settings_page' )
+		);
+
+		add_submenu_page(
+			ADMIN_MENU_SLUG,
+			__( 'Tidy Images — Trash', 'tidy-resize-images' ),
+			__( 'Trash', 'tidy-resize-images' ),
+			ADMIN_CAPABILITY,
+			self::TRASH_MENU_SLUG,
+			array( $this, 'render_trash_page' )
+		);
 	}
 
 	/**
@@ -63,6 +98,17 @@ class Admin_Hooks {
 	 */
 	public function render_settings_page(): void {
 		require TRI_PLUGIN_DIR . 'admin-templates/settings-page.php';
+	}
+
+	/**
+	 * Render the Trash page by including its template.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	public function render_trash_page(): void {
+		require TRI_PLUGIN_DIR . 'admin-templates/trash-page.php';
 	}
 
 	/**
@@ -78,7 +124,10 @@ class Admin_Hooks {
 	 * @return void
 	 */
 	public function enqueue_assets( string $hook_suffix ): void {
-		if ( self::SETTINGS_HOOK_SUFFIX === $hook_suffix ) {
+		$is_plugin_page = ( self::SETTINGS_HOOK_SUFFIX === $hook_suffix )
+			|| ( self::TRASH_HOOK_SUFFIX === $hook_suffix );
+
+		if ( $is_plugin_page ) {
 			wp_enqueue_style(
 				'tri-admin',
 				plugins_url( 'assets/admin/tri-admin.css', TRI_PLUGIN_FILE ),

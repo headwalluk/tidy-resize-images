@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Trash admin page (`admin-templates/trash-page.php`) under
+  Tidy Images → Trash submenu. Lists trashed attachments with
+  thumbnail, original vs current size/dims, savings, trashed-at
+  timestamp, and per-row Restore / Purge actions (admin-post.php with
+  per-attachment nonces). Empty state surfaces an explanatory notice;
+  rows where `filename_changed=true` warn the operator that DB
+  references may be stale until M6 search-replace lands.
+- `Admin_Hooks` registers the Trash submenu with same-slug "Settings"
+  override so the auto-generated duplicate parent entry is replaced
+  with a meaningful label. Asset enqueueing extended to cover the
+  Trash page.
+- `Trash_Manager::list_trashed()` and `Trash_Manager::count_trashed()`
+  query helpers for the admin page (and future Status counts /
+  WP-CLI scan).
 - `Trash_Manager` class (static API): backs up an attachment's current
   file to `wp-content/uploads/tri-trash/{year}/{month}/{id}-{ts}-{basename}`,
   records a restore receipt in `_tri_backup` post meta, and provides
