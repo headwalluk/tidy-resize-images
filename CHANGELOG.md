@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Status tab (`admin-templates/settings-tabs/status.php`): read-only
+  view of detected GD/Imagick capabilities (with a per-MIME table),
+  attachment counts (total / processed / protected / has-backup /
+  conversion-skipped), and the current settings hash. An
+  explanatory "no processing has run yet" notice appears at the top
+  while the tracking-meta-based counts are all zero, so operators
+  understand that's expected during early-milestone use.
 - Behaviour tab (`admin-templates/settings-tabs/behaviour.php`):
   dry-run mode toggle, EXIF stripping toggle (default on), originals
   backup toggle (default on), trash retention days input (0 disables
