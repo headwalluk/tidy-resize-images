@@ -49,6 +49,46 @@ class Image_Processor {
 	}
 
 	/**
+	 * Compute a settings hash over the subset of $rules that affects
+	 * encoded output bytes.
+	 *
+	 * Used by Skip_Memo to decide whether a previously-recorded
+	 * "result-larger-than-source" memo is still valid: when the operator
+	 * changes any of these knobs, the memo is automatically invalidated
+	 * because the hash no longer matches.
+	 *
+	 * Hashed inputs (per the format-decision tree in the project tracker):
+	 *   - lossy_target, lossy_quality
+	 *   - alpha_target, alpha_quality
+	 *   - jpeg_quality
+	 *   - strip_exif
+	 *
+	 * Excluded: max_edge (the result-larger rule only fires when no
+	 * dimension change occurred, so max_edge can never have differed
+	 * between memo and current run for the memo to apply); excluded_mimes
+	 * (decision-stage concern, not encoding-stage); dry_run flag (no
+	 * effect on output bytes).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $rules Ruleset.
+	 *
+	 * @return string sha1 hex string.
+	 */
+	public static function settings_hash( array $rules ): string {
+		$relevant = array(
+			'lossy_target'  => (string) ( $rules['lossy_target'] ?? '' ),
+			'lossy_quality' => (int) ( $rules['lossy_quality'] ?? 0 ),
+			'alpha_target'  => (string) ( $rules['alpha_target'] ?? '' ),
+			'alpha_quality' => (int) ( $rules['alpha_quality'] ?? 0 ),
+			'jpeg_quality'  => (int) ( $rules['jpeg_quality'] ?? 0 ),
+			'strip_exif'    => (bool) ( $rules['strip_exif'] ?? false ),
+		);
+
+		return sha1( (string) wp_json_encode( $relevant ) );
+	}
+
+	/**
 	 * Compile the default ruleset from plugin constants.
 	 *
 	 * M3 will add a `from_settings()` factory that reads from wp_options;

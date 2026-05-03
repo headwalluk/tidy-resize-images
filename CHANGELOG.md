@@ -20,6 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   can override without subclassing. Includes an early MIME detector
   (wp_check_filetype with mime_content_type fallback) so excluded
   vector formats like SVG are caught before any raster decode attempt.
+- `Skip_Memo` class: per-attachment memoisation for the
+  "result-larger-than-source" rule. Stores `_tri_conversion_skipped`
+  meta containing reason, attempted target MIME, attempted-at timestamp
+  (Y-m-d H:i:s T), and a settings hash. `Skip_Memo::should_skip(id,
+  hash)` returns true only when a memo exists AND its hash matches the
+  current settings hash — operator changes to encoding settings
+  invalidate memos automatically.
+- `Image_Processor::settings_hash()`: pure static helper that hashes
+  the subset of rules affecting encoded output bytes (lossy/alpha
+  targets and qualities, jpeg quality, strip_exif). Excludes max_edge
+  (only relevant when no resize occurred — already implied by the memo
+  trigger), excluded_mimes, and dry-run flag.
 - `Image_Processor::execute()`: carries out the transform described by
   a Plan. Resizes (if max_edge set), encodes to target_mime at the
   configured quality, optionally strips EXIF — all into a temp path
