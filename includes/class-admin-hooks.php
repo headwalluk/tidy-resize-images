@@ -17,13 +17,21 @@ defined( 'ABSPATH' ) || die();
  *   to the appropriate template.
  * - Render admin notices, including the conflict notice when competing
  *   image-optimization plugins are active alongside this one.
- *
- * Asset enqueueing is deferred until M3 when the settings page acquires
- * its own JS/CSS.
+ * - Enqueue the plugin's admin CSS / JS, scoped to the settings page so
+ *   we don't bleed assets onto unrelated admin screens.
  *
  * @since 0.1.0
  */
 class Admin_Hooks {
+
+	/**
+	 * Hook suffix WordPress uses for our top-level admin page.
+	 *
+	 * Format is `toplevel_page_<menu-slug>`.
+	 *
+	 * @var string
+	 */
+	private const SETTINGS_HOOK_SUFFIX = 'toplevel_page_' . ADMIN_MENU_SLUG;
 
 	/**
 	 * Register the top-level admin menu entry.
@@ -55,6 +63,37 @@ class Admin_Hooks {
 	 */
 	public function render_settings_page(): void {
 		require TRI_PLUGIN_DIR . 'admin-templates/settings-page.php';
+	}
+
+	/**
+	 * Enqueue the plugin's admin CSS and JS.
+	 *
+	 * Scoped to our settings page only — `$hook_suffix` matches the
+	 * fully-qualified hook name WordPress passes to `admin_enqueue_scripts`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $hook_suffix Current admin page hook suffix.
+	 *
+	 * @return void
+	 */
+	public function enqueue_assets( string $hook_suffix ): void {
+		if ( self::SETTINGS_HOOK_SUFFIX === $hook_suffix ) {
+			wp_enqueue_style(
+				'tri-admin',
+				plugins_url( 'assets/admin/tri-admin.css', TRI_PLUGIN_FILE ),
+				array(),
+				TRI_PLUGIN_VERSION
+			);
+
+			wp_enqueue_script(
+				'tri-admin',
+				plugins_url( 'assets/admin/tri-admin.js', TRI_PLUGIN_FILE ),
+				array(),
+				TRI_PLUGIN_VERSION,
+				true
+			);
+		}
 	}
 
 	/**

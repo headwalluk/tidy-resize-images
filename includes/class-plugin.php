@@ -61,6 +61,7 @@ class Plugin {
 			add_action( 'admin_init', array( $settings, 'register' ) );
 			add_action( 'admin_menu', array( $admin_hooks, 'register_menu' ) );
 			add_action( 'admin_notices', array( $admin_hooks, 'render_notices' ) );
+			add_action( 'admin_enqueue_scripts', array( $admin_hooks, 'enqueue_assets' ) );
 		}
 	}
 

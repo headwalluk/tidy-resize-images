@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Tabbed settings page shell (`admin-templates/settings-page.php`) with
+  four tabs: Limits, Format, Behaviour, Status. URL-hash navigation
+  (`#limits`, `#format`, ...) so the active tab persists across reloads
+  and is shareable via deep-link. Form fields land in subsequent
+  milestones.
+- Admin asset pipeline: `assets/admin/tri-admin.css` and
+  `assets/admin/tri-admin.js`. `Admin_Hooks::enqueue_assets()` hooks
+  into `admin_enqueue_scripts` and is scoped to the settings page only
+  (matches the `toplevel_page_tidy-resize-images` hook suffix). The
+  JS uses class-based selectors and is scoped to `.tri-settings` so we
+  don't interfere with other nav-tab-wrappers in the WP admin.
 - `Image_Processor::from_settings()` static factory: builds a ruleset
   by reading from a `Settings` instance (defaulting to the
   orchestrator's shared instance). Returns the same shape as

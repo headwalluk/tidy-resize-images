@@ -1,0 +1,58 @@
+/*
+ * Tidy Resize Images — admin styles.
+ *
+ * Scoped to the .tri-settings wrap so we don't bleed into other admin pages.
+ */
+
+.tri-settings .tri-tab-content {
+	margin-top: 20px;
+}
+
+.tri-settings .tri-tab-panel {
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.tri-settings .tri-tab-panel h2:first-child {
+	margin-top: 0;
+}
+
+.tri-settings .form-table th {
+	width: 220px;
+}
+
+.tri-settings .tri-help {
+	color: #646970;
+	font-style: italic;
+	font-size: 13px;
+}
+
+.tri-settings .tri-coming-soon {
+	padding: 20px;
+	background: #f6f7f7;
+	border-left: 4px solid #2271b1;
+	color: #1d2327;
+}
+
+.tri-settings .tri-cap-table {
+	border-collapse: collapse;
+	margin-top: 10px;
+}
+
+.tri-settings .tri-cap-table th,
+.tri-settings .tri-cap-table td {
+	padding: 6px 12px;
+	border: 1px solid #ccd0d4;
+	text-align: left;
+}
+
+.tri-settings .tri-cap-yes {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.tri-settings .tri-cap-no {
+	color: #d63638;
+}
