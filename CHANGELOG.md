@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Limits tab (`admin-templates/settings-tabs/limits.php`): max longest
+  edge (px) and max file size (bytes) inputs, both clamped to ranges
+  defined by `MIN_EDGE`/`MAX_EDGE` and `MIN_BYTES`/`MAX_BYTES`. The
+  byte input shows a `size_format()` helper line ("Current value: 512
+  KB") so operators can sanity-check without doing arithmetic.
+- Settings page restructured to load per-tab partials from
+  `admin-templates/settings-tabs/<slug>.php`, falling back to a
+  "coming soon" placeholder for tabs whose partial doesn't exist yet.
+  Single form spans all tabs — one `Save Changes` button persists
+  everything via the standard `options.php` submission flow.
 - Tabbed settings page shell (`admin-templates/settings-page.php`) with
   four tabs: Limits, Format, Behaviour, Status. URL-hash navigation
   (`#limits`, `#format`, ...) so the active tab persists across reloads
