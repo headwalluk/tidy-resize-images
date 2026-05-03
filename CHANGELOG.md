@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Behaviour tab (`admin-templates/settings-tabs/behaviour.php`):
+  dry-run mode toggle, EXIF stripping toggle (default on), originals
+  backup toggle (default on), trash retention days input (0 disables
+  auto-purge), and an always-skip MIME checkbox list with all seven
+  known image MIMEs. SVG and GIF are default-checked (vector and
+  animated formats are out of v1 scope).
+  The DB search-replace scope controls (mentioned in the M3 tracker
+  entry) are deliberately deferred to M6 — surfacing UI without the
+  underlying implementation would be a foot-gun.
 - Format tab (`admin-templates/settings-tabs/format.php`): lossy
   target + quality, alpha-preserving target + quality, JPEG
   recompression quality. Target dropdowns are runtime-capability-gated
