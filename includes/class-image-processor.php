@@ -110,6 +110,70 @@ class Image_Processor {
 	 *
 	 * @return array<string, mixed>
 	 */
+	/**
+	 * Build a ruleset from the current wp_options-stored settings.
+	 *
+	 * Reads from a `Settings` instance (defaulting to the orchestrator's
+	 * shared instance). Returns the same shape as `default_rules()` —
+	 * the `Image_Processor` doesn't care whether rules came from the
+	 * constants (testing, fresh install) or the operator's saved
+	 * settings.
+	 *
+	 * Note: `max_bytes`, `dry_run`, and `backup_originals` are
+	 * intentionally NOT included. Those are scanner / wrapper-layer
+	 * concerns (which attachments are candidates, whether to mutate the
+	 * filesystem, whether to back up the original) — not Image_Processor
+	 * concerns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Settings|null $settings Optional Settings instance for
+	 *                                testability. Defaults to the
+	 *                                orchestrator's shared instance.
+	 *
+	 * @return array<string, mixed> Ruleset, same shape as default_rules().
+	 */
+	public static function from_settings( ?Settings $settings = null ): array {
+		if ( is_null( $settings ) ) {
+			$settings = get_plugin()->get_settings();
+		}
+
+		return array(
+			'max_edge'       => (int) $settings->get( OPT_LIMITS_MAX_EDGE ),
+			'lossy_target'   => (string) $settings->get( OPT_FORMAT_LOSSY_TARGET ),
+			'lossy_quality'  => (int) $settings->get( OPT_FORMAT_LOSSY_QUALITY ),
+			'alpha_target'   => (string) $settings->get( OPT_FORMAT_ALPHA_TARGET ),
+			'alpha_quality'  => (int) $settings->get( OPT_FORMAT_ALPHA_QUALITY ),
+			'jpeg_quality'   => (int) $settings->get( OPT_FORMAT_JPEG_QUALITY ),
+			'strip_exif'     => (bool) $settings->get( OPT_BEHAVIOUR_STRIP_EXIF ),
+			'excluded_mimes' => (array) $settings->get( OPT_BEHAVIOUR_EXCLUDED_MIMES ),
+		);
+	}
+
+	/**
+	 * Compile the default ruleset from plugin constants.
+	 *
+	 * Used as a fallback when no Settings instance is available (e.g. in
+	 * unit tests or fresh-install code paths). For production callers
+	 * during a normal request, use `from_settings()` instead so the
+	 * operator's saved values are honoured.
+	 *
+	 * Returned shape:
+	 *   array(
+	 *     'max_edge'       => int,
+	 *     'lossy_target'   => string,  // MIME
+	 *     'lossy_quality'  => int,     // 1-100
+	 *     'alpha_target'   => string,  // MIME
+	 *     'alpha_quality'  => int,
+	 *     'jpeg_quality'   => int,
+	 *     'strip_exif'     => bool,
+	 *     'excluded_mimes' => array<string>,
+	 *   )
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
 	public static function default_rules(): array {
 		return array(
 			'max_edge'       => DEF_MAX_EDGE,

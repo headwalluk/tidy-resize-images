@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Image_Processor::from_settings()` static factory: builds a ruleset
+  by reading from a `Settings` instance (defaulting to the
+  orchestrator's shared instance). Returns the same shape as
+  `default_rules()`, so the processor itself doesn't care whether rules
+  came from constants or from operator-saved options. `max_bytes`,
+  `dry_run`, and `backup_originals` are intentionally excluded — those
+  are scanner / wrapper-layer concerns.
 - `Settings` class: registers every plugin option with the WordPress
   Settings API (one wp_options row per setting), with per-option
   sanitisation callbacks that clamp ints to MIN_/MAX_ ranges, validate
