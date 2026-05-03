@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Search-replace scope toggles on the Behaviour tab. Two checkboxes
+  (`tri_behaviour_sr_posts` and `tri_behaviour_sr_postmeta`), both
+  default-on, controlling which tables are rewritten when a file is
+  renamed. `Settings::sr_scope()` helper returns the scope array
+  ready for `Search_Replace::rewrite()` consumers (Trash_Manager,
+  Bulk_Processor).
 - `Search_Replace::rewrite_attachment_rename( $id, $old_meta, $new_meta, $scope, $dry_run )`:
   derives every `(old_url, new_url)` rename pair by comparing
   before/after `_wp_attachment_metadata` arrays — full-size + every

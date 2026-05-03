@@ -33,6 +33,8 @@ const OPT_BEHAVIOUR_STRIP_EXIF           = 'tri_behaviour_strip_exif';
 const OPT_BEHAVIOUR_BACKUP_ORIGINALS     = 'tri_behaviour_backup_originals';
 const OPT_BEHAVIOUR_TRASH_RETENTION_DAYS = 'tri_behaviour_trash_retention_days';
 const OPT_BEHAVIOUR_EXCLUDED_MIMES       = 'tri_behaviour_excluded_mimes';
+const OPT_BEHAVIOUR_SR_POSTS             = 'tri_behaviour_sr_posts';
+const OPT_BEHAVIOUR_SR_POSTMETA          = 'tri_behaviour_sr_postmeta';
 
 // Internal state.
 const OPT_DB_VERSION = 'tri_db_version';

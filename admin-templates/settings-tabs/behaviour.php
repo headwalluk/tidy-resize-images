@@ -25,6 +25,8 @@ $tri_strip_exif     = (bool) $tri_settings->get( OPT_BEHAVIOUR_STRIP_EXIF );
 $tri_backup         = (bool) $tri_settings->get( OPT_BEHAVIOUR_BACKUP_ORIGINALS );
 $tri_retention_days = (int) $tri_settings->get( OPT_BEHAVIOUR_TRASH_RETENTION_DAYS );
 $tri_excluded_mimes = (array) $tri_settings->get( OPT_BEHAVIOUR_EXCLUDED_MIMES );
+$tri_sr_posts       = (bool) $tri_settings->get( OPT_BEHAVIOUR_SR_POSTS );
+$tri_sr_postmeta    = (bool) $tri_settings->get( OPT_BEHAVIOUR_SR_POSTMETA );
 
 /**
  * Friendly display label for a MIME type used in the excluded-MIMEs list.
@@ -117,6 +119,27 @@ printf(
 	esc_html__( 'Always skip these MIME types', 'tidy-resize-images' ),
 	$tri_mime_checkboxes,
 	esc_html__( 'The image processor will refuse to touch sources of these MIME types regardless of other settings. Defaults: SVG and GIF (vector and animated formats are out of v1 scope).', 'tidy-resize-images' )
+);
+// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
+
+// --- Search-replace scope -------------------------------------------------.
+$tri_sr_html = sprintf(
+	'<label style="display:block;margin-bottom:4px;"><input type="checkbox" name="%1$s" value="1"%2$s /> <code>wp_posts.post_content</code> &nbsp; %3$s</label>'
+	. '<label style="display:block;margin-bottom:4px;"><input type="checkbox" name="%4$s" value="1"%5$s /> <code>wp_postmeta.meta_value</code> &nbsp; %6$s</label>',
+	esc_attr( OPT_BEHAVIOUR_SR_POSTS ),
+	checked( $tri_sr_posts, true, false ),
+	esc_html__( 'rewrite raw + JSON-escaped URLs in post body content', 'tidy-resize-images' ),
+	esc_attr( OPT_BEHAVIOUR_SR_POSTMETA ),
+	checked( $tri_sr_postmeta, true, false ),
+	esc_html__( 'rewrite serialised + JSON meta values (Elementor, ACF, etc.)', 'tidy-resize-images' )
+);
+
+// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- $tri_sr_html is built from per-piece esc_*() calls above.
+printf(
+	'<tr><th scope="row">%1$s</th><td><fieldset>%2$s</fieldset><p class="description">%3$s</p></td></tr>',
+	esc_html__( 'Search-replace scope', 'tidy-resize-images' ),
+	$tri_sr_html,
+	esc_html__( 'When the processor renames a file (e.g. PNG → WebP), references in these tables are rewritten. Disable a scope only if you know references will be updated by another mechanism. wp_options and multisite tables are out of v1 scope.', 'tidy-resize-images' )
 );
 // phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 

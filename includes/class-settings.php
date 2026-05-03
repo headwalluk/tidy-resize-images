@@ -160,6 +160,42 @@ class Settings {
 				'default'           => DEF_EXCLUDED_MIMES,
 			)
 		);
+		register_setting(
+			self::OPTION_GROUP,
+			OPT_BEHAVIOUR_SR_POSTS,
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => array( $this, 'sanitize_bool' ),
+				'default'           => true,
+			)
+		);
+		register_setting(
+			self::OPTION_GROUP,
+			OPT_BEHAVIOUR_SR_POSTMETA,
+			array(
+				'type'              => 'boolean',
+				'sanitize_callback' => array( $this, 'sanitize_bool' ),
+				'default'           => true,
+			)
+		);
+	}
+
+	/**
+	 * Build the search-replace `$scope` array from the current settings.
+	 *
+	 * Used by callers (Trash_Manager, Bulk_Processor) when invoking
+	 * `Search_Replace::rewrite()` so the operator's scope toggles are
+	 * honoured uniformly across every code path.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, bool>
+	 */
+	public function sr_scope(): array {
+		return array(
+			'posts'    => (bool) $this->get( OPT_BEHAVIOUR_SR_POSTS ),
+			'postmeta' => (bool) $this->get( OPT_BEHAVIOUR_SR_POSTMETA ),
+		);
 	}
 
 	/**
@@ -228,6 +264,8 @@ class Settings {
 			OPT_BEHAVIOUR_BACKUP_ORIGINALS     => true,
 			OPT_BEHAVIOUR_TRASH_RETENTION_DAYS => DEF_TRASH_RETENTION_DAYS,
 			OPT_BEHAVIOUR_EXCLUDED_MIMES       => DEF_EXCLUDED_MIMES,
+			OPT_BEHAVIOUR_SR_POSTS             => true,
+			OPT_BEHAVIOUR_SR_POSTMETA          => true,
 		);
 	}
 
