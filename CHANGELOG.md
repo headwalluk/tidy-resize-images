@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Trash POST handlers wired through admin-post.php:
+  `tri_trash_restore` and `tri_trash_purge`. Each handler verifies
+  capability (`manage_options`), attachment ID, and per-attachment
+  nonce (`tri_trash_action_<id>`) before delegating to
+  `Trash_Manager::restore()` / `::purge()`, then redirects back to
+  the Trash page with a `tri_notice=` query param consumed by the
+  template's flash-message rendering.
 - Trash admin page (`admin-templates/trash-page.php`) under
   Tidy Images → Trash submenu. Lists trashed attachments with
   thumbnail, original vs current size/dims, savings, trashed-at

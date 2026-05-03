@@ -13,12 +13,15 @@ defined( 'ABSPATH' ) || die();
  * Registers admin-side surfaces.
  *
  * Responsibilities:
- * - Register the top-level admin menu entry and route its render callback
- *   to the appropriate template.
+ * - Register the top-level admin menu entry plus the Settings and Trash
+ *   submenus, routing render callbacks to the appropriate templates.
  * - Render admin notices, including the conflict notice when competing
  *   image-optimization plugins are active alongside this one.
- * - Enqueue the plugin's admin CSS / JS, scoped to the settings page so
- *   we don't bleed assets onto unrelated admin screens.
+ * - Enqueue the plugin's admin CSS / JS, scoped to our pages so we
+ *   don't bleed assets onto unrelated admin screens.
+ * - Handle admin-post.php form submissions for the Trash page (restore
+ *   and purge actions). Each handler verifies capability, attachment
+ *   ID, and nonce before delegating to Trash_Manager.
  *
  * @since 0.1.0
  */
@@ -109,6 +112,90 @@ class Admin_Hooks {
 	 */
 	public function render_trash_page(): void {
 		require TRI_PLUGIN_DIR . 'admin-templates/trash-page.php';
+	}
+
+	/**
+	 * Handle the `tri_trash_restore` admin-post action.
+	 *
+	 * Verifies capability, attachment ID, and per-attachment nonce; then
+	 * calls Trash_Manager::restore() and redirects back to the Trash
+	 * page with a success/failure flash message.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	public function handle_trash_restore(): void {
+		$attachment_id = $this->verify_trash_action_request();
+		$ok            = Trash_Manager::restore( $attachment_id );
+
+		$this->redirect_to_trash_page( $ok ? 'restored' : 'restore_failed' );
+	}
+
+	/**
+	 * Handle the `tri_trash_purge` admin-post action.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	public function handle_trash_purge(): void {
+		$attachment_id = $this->verify_trash_action_request();
+		$ok            = Trash_Manager::purge( $attachment_id );
+
+		$this->redirect_to_trash_page( $ok ? 'purged' : 'purge_failed' );
+	}
+
+	/**
+	 * Validate a Trash-page action request and return the attachment ID.
+	 *
+	 * Aborts with `wp_die()` on any failure (missing capability, missing
+	 * attachment ID, bad nonce). On success returns the verified
+	 * attachment ID.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int
+	 */
+	private function verify_trash_action_request(): int {
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'tidy-resize-images' ), 403 );
+		}
+
+		$attachment_id = isset( $_GET['attachment_id'] ) ? absint( $_GET['attachment_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce verified below.
+
+		if ( 0 === $attachment_id ) {
+			wp_die( esc_html__( 'Missing attachment ID.', 'tidy-resize-images' ), 400 );
+		}
+
+		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+
+		if ( ! wp_verify_nonce( $nonce, 'tri_trash_action_' . $attachment_id ) ) {
+			wp_die( esc_html__( 'Security check failed. Refresh the Trash page and try again.', 'tidy-resize-images' ), 403 );
+		}
+
+		return $attachment_id;
+	}
+
+	/**
+	 * Redirect back to the Trash admin page with a notice query param.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $notice Notice slug consumed by the Trash template
+	 *                       (e.g. 'restored', 'purge_failed').
+	 *
+	 * @return void
+	 */
+	private function redirect_to_trash_page( string $notice ): void {
+		$url = add_query_arg(
+			'tri_notice',
+			$notice,
+			admin_url( 'admin.php?page=' . self::TRASH_MENU_SLUG )
+		);
+
+		wp_safe_redirect( $url );
+		exit;
 	}
 
 	/**
