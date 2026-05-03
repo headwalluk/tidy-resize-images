@@ -233,6 +233,32 @@ class Admin_Hooks {
 	}
 
 	/**
+	 * Build a plugin asset URL that respects the current request's scheme.
+	 *
+	 * `plugins_url()` derives the scheme from `siteurl` / WP_CONTENT_URL.
+	 * When WordPress is behind an SSL-terminating proxy that doesn't set
+	 * the HTTPS server var, PHP sees `http://` even though the browser is
+	 * on `https://` — and asset URLs come back as `http://`, which the
+	 * browser then blocks as mixed content. We force the URL to match the
+	 * current request scheme as a defensive measure.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $relative Relative path from the plugin root (e.g. 'assets/admin/tri-admin.js').
+	 *
+	 * @return string Absolute URL.
+	 */
+	private function asset_url( string $relative ): string {
+		$url = plugins_url( $relative, TRI_PLUGIN_FILE );
+
+		if ( is_ssl() ) {
+			$url = set_url_scheme( $url, 'https' );
+		}
+
+		return $url;
+	}
+
+	/**
 	 * Validate a Trash-page action request and return the attachment ID.
 	 *
 	 * Aborts with `wp_die()` on any failure (missing capability, missing
@@ -304,14 +330,14 @@ class Admin_Hooks {
 		if ( $is_plugin_page ) {
 			wp_enqueue_style(
 				'tri-admin',
-				plugins_url( 'assets/admin/tri-admin.css', TRI_PLUGIN_FILE ),
+				$this->asset_url( 'assets/admin/tri-admin.css' ),
 				array(),
 				TRI_PLUGIN_VERSION
 			);
 
 			wp_enqueue_script(
 				'tri-admin',
-				plugins_url( 'assets/admin/tri-admin.js', TRI_PLUGIN_FILE ),
+				$this->asset_url( 'assets/admin/tri-admin.js' ),
 				array(),
 				TRI_PLUGIN_VERSION,
 				true
