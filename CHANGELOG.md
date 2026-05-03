@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Format tab (`admin-templates/settings-tabs/format.php`): lossy
+  target + quality, alpha-preserving target + quality, JPEG
+  recompression quality. Target dropdowns are runtime-capability-gated
+  — AVIF options render with `disabled` and an explanatory tooltip
+  when the host's GD/Imagick build cannot write AVIF, so operators see
+  the option exists but understand why it is unavailable.
+- Expert mode placeholder on the Format tab: a callout explaining that
+  Expert mode (a from→to mapping matrix) is planned, with reasoning
+  for why Simple/Auto mode covers most use cases.
 - Limits tab (`admin-templates/settings-tabs/limits.php`): max longest
   edge (px) and max file size (bytes) inputs, both clamped to ranges
   defined by `MIN_EDGE`/`MAX_EDGE` and `MIN_BYTES`/`MAX_BYTES`. The
