@@ -58,6 +58,11 @@ const DEF_ALPHA_QUALITY        = 85;
 const DEF_JPEG_QUALITY         = 82;
 const DEF_TRASH_RETENTION_DAYS = 30;
 
+// --- Cron --------------------------------------------------------------------.
+
+const TRI_BULK_CRON_HOOK  = 'tri_bulk_cron';
+const DEF_CRON_BATCH_SIZE = 20;
+
 // --- Setting input ranges - prefix with MIN_/MAX_ ---------------------------.
 //
 // Used by sanitisation callbacks to clamp operator input to sensible bounds.

@@ -62,3 +62,33 @@ function tri_plugin_run(): void {
 	$tri_plugin_instance->run();
 }
 tri_plugin_run();
+
+/**
+ * Activation hook: schedule the daily bulk-processor cron.
+ *
+ * Idempotent — only schedules if not already scheduled. Initial run is
+ * delayed by an hour so activation doesn't immediately spike CPU.
+ *
+ * @since 0.1.0
+ *
+ * @return void
+ */
+function tri_plugin_activate(): void {
+	if ( ! wp_next_scheduled( \Tidy_Resize_Images\TRI_BULK_CRON_HOOK ) ) {
+		wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', \Tidy_Resize_Images\TRI_BULK_CRON_HOOK );
+	}
+}
+
+/**
+ * Deactivation hook: clear the scheduled cron event.
+ *
+ * @since 0.1.0
+ *
+ * @return void
+ */
+function tri_plugin_deactivate(): void {
+	wp_clear_scheduled_hook( \Tidy_Resize_Images\TRI_BULK_CRON_HOOK );
+}
+
+register_activation_hook( __FILE__, 'tri_plugin_activate' );
+register_deactivation_hook( __FILE__, 'tri_plugin_deactivate' );
