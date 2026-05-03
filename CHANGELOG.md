@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Smoke-test runner `dev-notes/smoke-tests/trash-roundtrip.php`:
+  exercises backup → idempotent re-backup → modify-then-restore →
+  re-backup → purge against a synthetic attachment. Run with
+  `wp eval-file <path>`.
 - Trash POST handlers wired through admin-post.php:
   `tri_trash_restore` and `tri_trash_purge`. Each handler verifies
   capability (`manage_options`), attachment ID, and per-attachment

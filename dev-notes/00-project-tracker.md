@@ -2,8 +2,8 @@
 
 **Version:** 0.1.0-dev
 **Last Updated:** 2026-05-03
-**Current Phase:** Milestone 4 (Trash Manager)
-**Overall Progress:** 30%
+**Current Phase:** Milestone 5 (Upload Handler)
+**Overall Progress:** 40%
 
 ---
 
@@ -23,17 +23,16 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### Up next (Milestone 4 — Trash Manager)
+### Up next (Milestone 5 — Upload Handler)
 
-- [ ] `includes/class-trash-manager.php` skeleton with `backup`, `restore`, `purge` methods
-- [ ] Trash directory layout: `wp-content/uploads/tri-trash/{year}/{month}/<sha>-<basename>`
-- [ ] `backup( $attachment_id )` — copy current attachment file to trash, write `_tri_backup` meta with restore record
-- [ ] `restore( $attachment_id )` — restore from `_tri_backup` meta, clear meta on success
-- [ ] `purge( $attachment_id )` — delete trash file, clear `_tri_backup` meta
-- [ ] `Trash_Manager::list_trashed( $limit )` — query attachments with trash backup
-- [ ] Admin Trash page (`admin-templates/trash-page.php`) under Tidy Images submenu
-- [ ] Per-row Restore + Purge actions on the Trash page (with nonces)
-- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/trash-roundtrip.php`
+- [ ] `includes/class-upload-handler.php` — wires Image_Processor into the WP upload pipeline
+- [ ] `wp_handle_upload_prefilter` hook — early gate on the temp-uploaded file
+- [ ] `big_image_size_threshold` filter — disable WP's scaled-rotation when our max_edge is lower
+- [ ] `wp_generate_attachment_metadata` hook — final pass after intermediate sizes are made
+- [ ] Front-end vs admin context detection (the rules may differ later — for v1 use the same rules everywhere, structure the call to allow per-context overrides)
+- [ ] Trash_Manager::backup integration before any mutation
+- [ ] Skip_Memo::record after a `result_larger_than_source` discard
+- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/upload-handler.php`
 
 ---
 
@@ -78,15 +77,16 @@ Tabbed admin page. Fully drives the processor's ruleset.
 - [x] `Image_Processor::from_settings()` factory
 - [x] `assets/admin/tri-admin.css` + `tri-admin.js` (hash-based tab nav), enqueued only on the settings page
 
-### M4 — Trash Manager
+### M4 — Trash Manager ✅
 Backup originals to `wp-content/uploads/tri-trash/{year}/{month}/`, store
 restore metadata in `_tri_backup` post meta, provide restore.
 
-- [ ] `Trash_Manager::backup( $attachment_id ): bool`
-- [ ] `Trash_Manager::restore( $attachment_id ): bool`
-- [ ] `Trash_Manager::purge( $attachment_id ): bool`
-- [ ] Auto-purge cron (configurable retention)
-- [ ] Trash admin page
+- [x] `Trash_Manager::backup( $attachment_id ): bool` (idempotent)
+- [x] `Trash_Manager::restore( $attachment_id ): bool` (regenerates `_wp_attachment_metadata`)
+- [x] `Trash_Manager::purge( $attachment_id ): bool` (idempotent)
+- [x] `Trash_Manager::list_trashed()` and `count_trashed()` query helpers
+- [x] Trash admin page under Tidy Images → Trash submenu, with per-row Restore + Purge actions (admin-post.php + per-attachment nonces) and warning rows when `filename_changed=true`
+- [ ] Auto-purge cron (configurable retention) — deferred to M10 polish per dependency on the cron-scheduling pattern not yet in use
 
 ### M5 — Upload Handler
 Hook the WP upload pipeline so new uploads are processed at arrival.
