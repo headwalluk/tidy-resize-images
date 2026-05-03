@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Smoke-test runner `dev-notes/smoke-tests/search-replace.php`:
+  exercises raw + JSON-escaped post_content rewrites, serialised
+  postmeta (top-level + nested), JSON-encoded postmeta, _tri_* meta
+  preservation, dry-run mode, and `rewrite_attachment_rename` pair
+  derivation. Run with `wp eval-file <path>`.
 - `Trash_Manager::restore()` now performs a reverse search-replace
   when the backup record's `filename_changed=true` flag is set
   (i.e. the processor renamed the file during the original

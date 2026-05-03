@@ -2,8 +2,8 @@
 
 **Version:** 0.1.0-dev
 **Last Updated:** 2026-05-03
-**Current Phase:** Milestone 6 (DB Search & Replace)
-**Overall Progress:** 50%
+**Current Phase:** Milestone 7 (Bulk Processor)
+**Overall Progress:** 60%
 
 ---
 
@@ -23,22 +23,22 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### Up next (Milestone 6 — DB Search & Replace)
+### Up next (Milestone 7 — Bulk Processor)
 
-- [ ] `includes/class-search-replace.php` — `rewrite( $old_url, $new_url, $scope ): Report` core
-- [ ] Serialized-safe walker (unserialize → walk → reserialize) for `wp_postmeta`
-- [ ] Replace BOTH raw (`https://...`) and JSON-escaped (`https:\/\/...`) forms at every string leaf — covers Elementor, Gutenberg, ACF flexible content, etc.
-- [ ] Scope toggles: posts (raw string replace on `post_content`), postmeta (walker)
-- [ ] Dry-run report enumerating paths, counts, and sample matched rows
-- [ ] `rewrite_attachment_rename( $attachment_id, $old_meta, $new_meta )` convenience that derives all sub-size rename pairs (logo.png + logo-150x150.png + ... → logo.webp + logo-150x150.webp + ...) and calls `rewrite()` for each
-- [ ] Wire into Trash_Manager::restore() so DB references revert when a backup is restored (filename_changed-aware)
-- [ ] Behaviour tab UI: search-replace scope checkboxes (posts / postmeta)
-- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/search-replace.php`
+The headline workflow. Single shared `Bulk_Processor::run_batch()` runner
+consumed by the interactive admin UI, the scheduled-cron variant, and
+the WP-CLI command (M9).
 
-**Out of scope for v1 / Future:**
-- `wp_options` rewrites — edge cases (page-builder global libraries, customizer settings). Easier to add as opt-in later than to ship default-on and surprise operators.
-- Multisite tables — `wp_*_posts`, `wp_*_postmeta`. Out for v1.
-- Auto-trigger from Upload_Handler — brand-new uploads have no DB references to rewrite (attachment was just inserted). Search-replace is triggered from bulk processor (M7), Media Library "Optimize Now" action (M8), and Trash_Manager::restore() only.
+- [ ] `includes/class-bulk-processor.php` — `Bulk_Processor::run_batch( $limit, $cursor, $dry_run ): Result`
+- [ ] Scan: query attachments matching processor criteria (oversize / wrong-MIME / file-too-big), respecting protection and skip-memo
+- [ ] Per-attachment work: backup → execute → swap → regenerate → search-replace (when filename changed)
+- [ ] Cursor-based pagination so the runner is resumable and memory-bounded
+- [ ] Admin AJAX endpoints: `tri_bulk_start`, `tri_bulk_step`, `tri_bulk_stop`
+- [ ] Bulk page under Tidy Images → Bulk submenu, with progress UI and per-attachment log
+- [ ] Pre-run warning banner: "Mark logos and brand assets as 'do not touch' before bulk processing"
+- [ ] Dry-run mode showing predicted savings without mutation
+- [ ] Scheduled-cron variant: `wp_schedule_event` daily hook calling `run_batch` with a memory-safe limit
+- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/bulk-runner.php`
 
 ---
 
@@ -110,16 +110,18 @@ not gold-plate; it's the safety net, not the headline feature.
 - [x] Self-unhooks during regenerate-intermediates to avoid filter recursion
 - [x] Trash_Manager::restore() fixed to use `wp_create_image_subsizes()` directly so it doesn't trigger Upload_Handler's filter on restored files
 
-### M6 — DB Search & Replace
+### M6 — DB Search & Replace ✅
 Required before bulk processor can rename safely. Serialized-data-aware.
 v1 scope: posts + postmeta (no options, no multisite).
 
-- [ ] `Search_Replace::rewrite( $old_url, $new_url, $scope ): Report`
-- [ ] Serialized-safe walker for postmeta (matches both raw and JSON-escaped URLs)
-- [ ] Dry-run report (paths, counts, sample rows)
-- [ ] `rewrite_attachment_rename( $id, $old_meta, $new_meta )` convenience for sub-size rename batching
-- [ ] Scope toggles in Behaviour tab (posts / postmeta)
-- [ ] Trash_Manager::restore() integration for reverse rewrite
+- [x] `Search_Replace::rewrite( $old_url, $new_url, $scope, $dry_run ): Report`
+- [x] Serialized-safe walker for postmeta (matches both raw and JSON-escaped URLs)
+- [x] Dry-run report (paths, counts, sample rows)
+- [x] `rewrite_attachment_rename( $id, $old_meta, $new_meta )` convenience for sub-size rename batching
+- [x] Scope toggles in Behaviour tab (posts / postmeta) + `Settings::sr_scope()` helper
+- [x] Trash_Manager::restore() integration for reverse rewrite (filename_changed-aware)
+- [x] Our own `_tri_*` meta keys are skipped to avoid mutating backup state
+- [x] `unserialize` uses `allowed_classes=false` to neutralise object-injection risk
 
 ### M7 — Bulk Processor
 Admin AJAX runner that processes existing attachments in batches.
