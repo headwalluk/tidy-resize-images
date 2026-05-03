@@ -2,8 +2,8 @@
 
 **Version:** 0.1.0-dev
 **Last Updated:** 2026-05-03
-**Current Phase:** Milestone 3 (Settings Page)
-**Overall Progress:** 20%
+**Current Phase:** Milestone 4 (Trash Manager)
+**Overall Progress:** 30%
 
 ---
 
@@ -23,17 +23,17 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### Up next (Milestone 3 — Settings Page)
+### Up next (Milestone 4 — Trash Manager)
 
-- [ ] `includes/class-settings.php` — register settings, sanitisation callbacks
-- [ ] `admin-templates/settings-page.php` — tabbed UI shell (hash-based nav per `dev-notes/patterns/admin-tabs.md`)
-- [ ] Tab: Limits — max edge, max file size, per-context overrides
-- [ ] Tab: Format — Simple/Auto mode (lossy + alpha targets, per-format quality)
-- [ ] Tab: Format — Expert mode placeholder ("Coming soon")
-- [ ] Tab: Behaviour — dry-run, strip EXIF, backup originals, trash retention, MIME exclusions, search-replace scope
-- [ ] Tab: Status — counts, last run, capability detection summary
-- [ ] `Image_Processor::from_settings()` factory — read rules from `wp_options` instead of constants
-- [ ] Asset enqueueing in `Admin_Hooks` (CSS + JS for the tabbed UI)
+- [ ] `includes/class-trash-manager.php` skeleton with `backup`, `restore`, `purge` methods
+- [ ] Trash directory layout: `wp-content/uploads/tri-trash/{year}/{month}/<sha>-<basename>`
+- [ ] `backup( $attachment_id )` — copy current attachment file to trash, write `_tri_backup` meta with restore record
+- [ ] `restore( $attachment_id )` — restore from `_tri_backup` meta, clear meta on success
+- [ ] `purge( $attachment_id )` — delete trash file, clear `_tri_backup` meta
+- [ ] `Trash_Manager::list_trashed( $limit )` — query attachments with trash backup
+- [ ] Admin Trash page (`admin-templates/trash-page.php`) under Tidy Images submenu
+- [ ] Per-row Restore + Purge actions on the Trash page (with nonces)
+- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/trash-roundtrip.php`
 
 ---
 
@@ -65,15 +65,18 @@ source file. Easy to call from WP-CLI for testing.
 - [x] Strip-EXIF support (Imagick `stripImage()` second pass; GD-encoded files are stripped natively)
 - [x] WP-CLI smoke-test snippet at `dev-notes/smoke-tests/processor-roundtrip.php`
 
-### M3 — Settings Page
+### M3 — Settings Page ✅
 Tabbed admin page. Fully drives the processor's ruleset.
 
-- [ ] Tab: Limits (max edge, max file size, per-context overrides)
-- [ ] Tab: Format — Simple/Auto mode (lossy target + alpha-preserving target + per-format quality)
-- [ ] Tab: Format — Expert mode placeholder ("Coming soon" — from→to mapping matrix)
-- [ ] Tab: Behaviour (dry-run, strip EXIF, backup originals, trash retention, MIME exclusions, search-replace scope)
-- [ ] Tab: Status (counts, last run, capabilities detected)
-- [ ] Settings-hash computation for memoisation invalidation
+- [x] Tab: Limits (max edge, max file size; per-context overrides deferred per agreement)
+- [x] Tab: Format — Simple/Auto mode (lossy + alpha targets, per-format quality, AVIF capability-gated)
+- [x] Tab: Format — Expert mode placeholder ("Coming soon" callout)
+- [x] Tab: Behaviour (dry-run, strip EXIF, backup originals, trash retention, MIME exclusions; search-replace scope deferred to M6 alongside the implementation)
+- [x] Tab: Status (capability detection summary, attachment counts, settings-hash debug; counts placeholder note while no processing has run)
+- [x] Settings-hash computation for memoisation invalidation (built in M2.5; surfaced on Status tab)
+- [x] `Settings` class with sanitisation, lazy `register()` on admin_init
+- [x] `Image_Processor::from_settings()` factory
+- [x] `assets/admin/tri-admin.css` + `tri-admin.js` (hash-based tab nav), enqueued only on the settings page
 
 ### M4 — Trash Manager
 Backup originals to `wp-content/uploads/tri-trash/{year}/{month}/`, store
