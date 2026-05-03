@@ -214,6 +214,72 @@ class Trash_Manager {
 	}
 
 	/**
+	 * List attachment IDs that currently have a trash backup.
+	 *
+	 * Sorted by attachment post date descending — newest uploads first.
+	 * Sorting by trash time is not done here because `trashed_at` lives
+	 * inside a serialised meta array, which can't be sorted cheaply via
+	 * MySQL. If chronological-by-trash sorting becomes important later,
+	 * add a scalar `_tri_backup_trashed_at` meta and sort on that.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $limit  Max attachments to return (positive int).
+	 * @param int $offset Offset for pagination (zero or positive).
+	 *
+	 * @return array<int> Attachment IDs.
+	 */
+	public static function list_trashed( int $limit = 20, int $offset = 0 ): array {
+		$query = new \WP_Query(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'posts_per_page' => max( 1, $limit ),
+				'offset'         => max( 0, $offset ),
+				'fields'         => 'ids',
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+				'no_found_rows'  => true,
+				'meta_query'     => array(  // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => META_BACKUP,
+						'compare' => 'EXISTS',
+					),
+				),
+			)
+		);
+
+		return array_map( 'intval', (array) $query->posts );
+	}
+
+	/**
+	 * Count attachments that currently have a trash backup.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int
+	 */
+	public static function count_trashed(): int {
+		$query = new \WP_Query(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => false,
+				'meta_query'     => array(  // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => META_BACKUP,
+						'compare' => 'EXISTS',
+					),
+				),
+			)
+		);
+
+		return (int) $query->found_posts;
+	}
+
+	/**
 	 * Compute the trash path for a given attachment + original basename.
 	 *
 	 * Uses GMT for the year/month bucket so timezone changes don't
