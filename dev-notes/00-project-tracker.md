@@ -2,8 +2,8 @@
 
 **Version:** 0.1.0-dev
 **Last Updated:** 2026-05-03
-**Current Phase:** Milestone 5 (Upload Handler)
-**Overall Progress:** 40%
+**Current Phase:** Milestone 6 (DB Search & Replace)
+**Overall Progress:** 50%
 
 ---
 
@@ -23,16 +23,16 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### Up next (Milestone 5 — Upload Handler)
+### Up next (Milestone 6 — DB Search & Replace)
 
-- [ ] `includes/class-upload-handler.php` — wires Image_Processor into the WP upload pipeline
-- [ ] `wp_handle_upload_prefilter` hook — early gate on the temp-uploaded file
-- [ ] `big_image_size_threshold` filter — disable WP's scaled-rotation when our max_edge is lower
-- [ ] `wp_generate_attachment_metadata` hook — final pass after intermediate sizes are made
-- [ ] Front-end vs admin context detection (the rules may differ later — for v1 use the same rules everywhere, structure the call to allow per-context overrides)
-- [ ] Trash_Manager::backup integration before any mutation
-- [ ] Skip_Memo::record after a `result_larger_than_source` discard
-- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/upload-handler.php`
+- [ ] `includes/class-search-replace.php` — `rewrite( $old_url, $new_url, $scope ): Report` core
+- [ ] Serialized-safe walker (unserialize → walk → reserialize) for `wp_postmeta` and `wp_options`
+- [ ] Scope toggles: posts (raw string replace on `post_content`), postmeta (walker), options (walker, scoped to allow-list of option names)
+- [ ] Dry-run report enumerating paths, counts, and sample matched rows
+- [ ] Integration with Upload_Handler's commit step: when MIME conversion changes the filename, automatically rewrite DB references and clear `filename_changed=true` from the backup record on success
+- [ ] Wire to Trash_Manager::restore so DB references are reverted on restore (filename_changed-aware)
+- [ ] Behaviour tab UI: search-replace scope checkboxes (posts / postmeta / options) and the option-name allow-list
+- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/search-replace.php`
 
 ---
 
@@ -88,7 +88,7 @@ restore metadata in `_tri_backup` post meta, provide restore.
 - [x] Trash admin page under Tidy Images → Trash submenu, with per-row Restore + Purge actions (admin-post.php + per-attachment nonces) and warning rows when `filename_changed=true`
 - [ ] Auto-purge cron (configurable retention) — deferred to M10 polish per dependency on the cron-scheduling pattern not yet in use
 
-### M5 — Upload Handler
+### M5 — Upload Handler ✅
 Hook the WP upload pipeline so new uploads are processed at arrival.
 
 **Lower-priority workflow** — operator preference is to skip upload-time
@@ -96,10 +96,13 @@ processing on their own sites and rely on the daily cron run instead
 (see M7's scheduled cron variant). Build M5 cleanly per the plan but do
 not gold-plate; it's the safety net, not the headline feature.
 
-- [ ] `big_image_size_threshold` — disable WP scaled-rotation if our limit is lower
-- [ ] `wp_generate_attachment_metadata` — final pass after intermediate sizes
-- [ ] Trash_Manager::backup before any mutation
-- [ ] Skip_Memo::record after a `result_larger_than_source` discard
+- [x] `big_image_size_threshold` — honours our `max_edge` when ours is the lower value
+- [x] `wp_generate_attachment_metadata` — full backup → execute → swap → regenerate-intermediates pipeline
+- [x] Trash_Manager::backup before any mutation (skipped if `backup_originals=false`)
+- [x] Skip_Memo::record after a `result_larger_than_source` discard
+- [x] `_tri_processed_at` meta written on commit; `filename_changed=true` set on backup record when MIME changes
+- [x] Self-unhooks during regenerate-intermediates to avoid filter recursion
+- [x] Trash_Manager::restore() fixed to use `wp_create_image_subsizes()` directly so it doesn't trigger Upload_Handler's filter on restored files
 
 ### M6 — DB Search & Replace
 Required before bulk processor can rename safely. Serialized-data-aware.

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Smoke-test runner `dev-notes/smoke-tests/upload-handler.php`:
+  inserts a synthetic 4000×3000 PNG with alpha + noise, triggers
+  `wp_generate_attachment_metadata`, reports the post-processing
+  state, runs the restore round-trip and verifies the file is
+  back to .png. Run with `wp eval-file <path>`.
 - `Upload_Handler` full processing pipeline on
   `wp_generate_attachment_metadata`. Pre-condition guard checks
   (context, protected flag, dry-run, skip-memo) live in
