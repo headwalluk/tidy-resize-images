@@ -130,10 +130,16 @@ class Trash_Manager {
 		$backup  = self::get_backup( $attachment_id );
 
 		if ( ! is_null( $backup ) ) {
-			$trash_path = (string) ( $backup['path'] ?? '' );
-			$orig_path  = (string) ( $backup['orig_path'] ?? '' );
+			$trash_path       = (string) ( $backup['path'] ?? '' );
+			$orig_path        = (string) ( $backup['orig_path'] ?? '' );
+			$filename_changed = ! empty( $backup['filename_changed'] );
 
 			if ( '' !== $trash_path && '' !== $orig_path && file_exists( $trash_path ) ) {
+				// Capture metadata BEFORE we delete the converted file —
+				// needed by Search_Replace below to compute the reverse
+				// rename pairs (current converted URLs → restored URLs).
+				$pre_restore_meta = $filename_changed ? wp_get_attachment_metadata( $attachment_id ) : null;
+
 				self::delete_current_image_files( $attachment_id );
 
 				wp_mkdir_p( dirname( $orig_path ) );
@@ -163,6 +169,16 @@ class Trash_Manager {
 								'post_mime_type' => (string) $backup['mime'],
 							)
 						);
+					}
+
+					// Reverse the processor's URL rewrites when the file was renamed.
+					// "Old" here is the converted state we just deleted, "New" is the
+					// restored state — Search_Replace::rewrite_attachment_rename
+					// derives the right pairs from the metadata diff.
+					if ( $filename_changed && is_array( $pre_restore_meta ) && is_array( $metadata ) ) {
+						$scope = get_plugin()->get_settings()->sr_scope();
+						$sr    = new Search_Replace();
+						$sr->rewrite_attachment_rename( $attachment_id, $pre_restore_meta, $metadata, $scope, false );
 					}
 
 					delete_post_meta( $attachment_id, META_BACKUP );

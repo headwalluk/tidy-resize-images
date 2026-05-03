@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Trash_Manager::restore()` now performs a reverse search-replace
+  when the backup record's `filename_changed=true` flag is set
+  (i.e. the processor renamed the file during the original
+  conversion). Captures pre-restore metadata before deleting the
+  converted files, restores the file, then calls
+  `Search_Replace::rewrite_attachment_rename()` to revert DB
+  references from the converted state back to the restored state.
+  Honours the operator's search-replace scope toggles via
+  `Settings::sr_scope()`.
+
+  End-to-end smoke test on dev host: 4000×3000 PNG uploaded →
+  Upload_Handler converts to WebP-scaled → post manually created
+  with WebP URL in content → restore() flips file back to PNG and
+  rewrites the post content. Both the PNG file and the rewritten
+  URL verified in the same call.
+
 - Search-replace scope toggles on the Behaviour tab. Two checkboxes
   (`tri_behaviour_sr_posts` and `tri_behaviour_sr_postmeta`), both
   default-on, controlling which tables are rewritten when a file is
