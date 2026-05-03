@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Trash_Manager` class (static API): backs up an attachment's current
+  file to `wp-content/uploads/tri-trash/{year}/{month}/{id}-{ts}-{basename}`,
+  records a restore receipt in `_tri_backup` post meta, and provides
+  `restore()` / `purge()` to reverse or discard. `backup()` is
+  idempotent (no-op if a backup already exists for the attachment);
+  `restore()` deletes current file + intermediate sizes, moves the
+  trash file back, regenerates `_wp_attachment_metadata` (and sub-size
+  files) via `wp_generate_attachment_metadata()`. DB content
+  references for renamed files are deferred to M6 (Search_Replace) —
+  the `filename_changed` flag in the backup record will let the Trash
+  admin page warn when restoring such an attachment.
 - Status tab (`admin-templates/settings-tabs/status.php`): read-only
   view of detected GD/Imagick capabilities (with a per-MIME table),
   attachment counts (total / processed / protected / has-backup /

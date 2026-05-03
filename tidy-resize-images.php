@@ -40,6 +40,7 @@ require_once TRI_PLUGIN_DIR . 'includes/class-capabilities.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-image-library.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-image-processor.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-skip-memo.php';
+require_once TRI_PLUGIN_DIR . 'includes/class-trash-manager.php';
 
 /**
  * Bootstrap the plugin: instantiate the orchestrator and register hooks.
