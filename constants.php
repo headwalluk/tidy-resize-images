@@ -56,6 +56,19 @@ const DEF_ALPHA_QUALITY        = 85;
 const DEF_JPEG_QUALITY         = 82;
 const DEF_TRASH_RETENTION_DAYS = 30;
 
+// --- Setting input ranges - prefix with MIN_/MAX_ ---------------------------.
+//
+// Used by sanitisation callbacks to clamp operator input to sensible bounds.
+
+const MIN_EDGE                 = 100;
+const MAX_EDGE                 = 10000;
+const MIN_BYTES                = 1024;             // 1 KB.
+const MAX_BYTES                = 10 * 1024 * 1024; // 10 MB.
+const MIN_QUALITY              = 1;
+const MAX_QUALITY              = 100;
+const MIN_TRASH_RETENTION_DAYS = 0;                // 0 = never auto-purge.
+const MAX_TRASH_RETENTION_DAYS = 365;
+
 // --- MIME types -------------------------------------------------------------.
 
 const MIME_JPEG = 'image/jpeg';

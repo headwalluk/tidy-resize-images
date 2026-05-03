@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Settings` class: registers every plugin option with the WordPress
+  Settings API (one wp_options row per setting), with per-option
+  sanitisation callbacks that clamp ints to MIN_/MAX_ ranges, validate
+  target MIMEs against allow-lists, and use `filter_var(...
+  FILTER_VALIDATE_BOOLEAN)` for bools. Provides `get()` with
+  constant-default fallback and `all()` for the full settings array.
+  Settings is wired in `Plugin::run()` to register on `admin_init`.
+- Range constants `MIN_EDGE`/`MAX_EDGE`, `MIN_BYTES`/`MAX_BYTES`,
+  `MIN_QUALITY`/`MAX_QUALITY`, `MIN_TRASH_RETENTION_DAYS`/`MAX_…` in
+  `constants.php`.
+- Static helpers `Settings::lossy_target_mimes()`,
+  `Settings::alpha_target_mimes()`, `Settings::known_image_mimes()`
+  for sanitisation and form rendering.
 - Smoke-test runner `dev-notes/smoke-tests/processor-roundtrip.php`:
   exercises `plan()` and `execute()` against three synthetic images
   (large alpha PNG, tiny JPEG, SVG) covering the main branches of the

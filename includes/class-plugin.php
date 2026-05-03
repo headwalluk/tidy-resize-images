@@ -30,6 +30,17 @@ class Plugin {
 	private ?Admin_Hooks $admin_hooks = null;
 
 	/**
+	 * Lazy-loaded settings collaborator.
+	 *
+	 * Per the project's settings-API pattern, this must be instantiated
+	 * before admin_init fires so register_setting() calls land in time.
+	 * `run()` resolves it eagerly inside the is_admin() branch.
+	 *
+	 * @var Settings|null
+	 */
+	private ?Settings $settings = null;
+
+	/**
 	 * Register all WordPress hooks.
 	 *
 	 * Front-end runs only the textdomain loader. Admin-only collaborators
@@ -44,7 +55,10 @@ class Plugin {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 
 		if ( is_admin() ) {
+			$settings    = $this->get_settings();
 			$admin_hooks = $this->get_admin_hooks();
+
+			add_action( 'admin_init', array( $settings, 'register' ) );
 			add_action( 'admin_menu', array( $admin_hooks, 'register_menu' ) );
 			add_action( 'admin_notices', array( $admin_hooks, 'render_notices' ) );
 		}
@@ -78,5 +92,20 @@ class Plugin {
 		}
 
 		return $this->admin_hooks;
+	}
+
+	/**
+	 * Get (and lazily instantiate) the Settings collaborator.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Settings
+	 */
+	public function get_settings(): Settings {
+		if ( is_null( $this->settings ) ) {
+			$this->settings = new Settings();
+		}
+
+		return $this->settings;
 	}
 }
