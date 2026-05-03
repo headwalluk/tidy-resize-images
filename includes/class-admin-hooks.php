@@ -28,27 +28,9 @@ defined( 'ABSPATH' ) || die();
 class Admin_Hooks {
 
 	/**
-	 * Hook suffix WordPress uses for our top-level admin page.
-	 *
-	 * Format is `toplevel_page_<menu-slug>`.
-	 *
-	 * @var string
-	 */
-	private const SETTINGS_HOOK_SUFFIX = 'toplevel_page_' . ADMIN_MENU_SLUG;
-
-	/**
 	 * Submenu slug for the Trash admin page.
 	 */
 	private const TRASH_MENU_SLUG = ADMIN_MENU_SLUG . '-trash';
-
-	/**
-	 * Hook suffix WordPress uses for our Trash submenu page.
-	 *
-	 * Format is `<parent-slug>_page_<submenu-slug>`.
-	 *
-	 * @var string
-	 */
-	private const TRASH_HOOK_SUFFIX = ADMIN_MENU_SLUG . '_page_' . ADMIN_MENU_SLUG . '-trash';
 
 	/**
 	 * Submenu slug for the Bulk admin page.
@@ -56,11 +38,26 @@ class Admin_Hooks {
 	private const BULK_MENU_SLUG = ADMIN_MENU_SLUG . '-bulk';
 
 	/**
-	 * Hook suffix for the Bulk submenu page.
+	 * Hook suffixes for our admin pages, captured from add_menu_page /
+	 * add_submenu_page return values during register_menu().
 	 *
-	 * @var string
+	 * We can't predict these from the menu slug alone — WordPress uses
+	 * `sanitize_title( $menu_title )` (not the menu slug) as the parent
+	 * prefix in submenu hook suffixes. For example, our parent menu_title
+	 * "Tidy Images" sanitises to `tidy-images`, so the Bulk submenu hook
+	 * is `tidy-images_page_tidy-resize-images-bulk` rather than the more
+	 * intuitive `tidy-resize-images_page_tidy-resize-images-bulk`.
+	 *
+	 * Capturing the returned values is robust against any renaming of
+	 * menu titles in the future.
+	 *
+	 * @var array<string, string> Keys: 'settings' | 'bulk' | 'trash'.
 	 */
-	private const BULK_HOOK_SUFFIX = ADMIN_MENU_SLUG . '_page_' . ADMIN_MENU_SLUG . '-bulk';
+	private array $hook_suffixes = array(
+		'settings' => '',
+		'bulk'     => '',
+		'trash'    => '',
+	);
 
 	/**
 	 * Register the top-level admin menu entry.
@@ -85,7 +82,7 @@ class Admin_Hooks {
 		// First submenu reuses the parent slug to override WordPress's
 		// auto-created duplicate entry — gives us a meaningful "Settings"
 		// label instead of repeating the parent's "Tidy Images".
-		add_submenu_page(
+		$this->hook_suffixes['settings'] = (string) add_submenu_page(
 			ADMIN_MENU_SLUG,
 			__( 'Tidy Resize Images — Settings', 'tidy-resize-images' ),
 			__( 'Settings', 'tidy-resize-images' ),
@@ -94,7 +91,7 @@ class Admin_Hooks {
 			array( $this, 'render_settings_page' )
 		);
 
-		add_submenu_page(
+		$this->hook_suffixes['bulk'] = (string) add_submenu_page(
 			ADMIN_MENU_SLUG,
 			__( 'Tidy Images — Bulk', 'tidy-resize-images' ),
 			__( 'Bulk', 'tidy-resize-images' ),
@@ -103,7 +100,7 @@ class Admin_Hooks {
 			array( $this, 'render_bulk_page' )
 		);
 
-		add_submenu_page(
+		$this->hook_suffixes['trash'] = (string) add_submenu_page(
 			ADMIN_MENU_SLUG,
 			__( 'Tidy Images — Trash', 'tidy-resize-images' ),
 			__( 'Trash', 'tidy-resize-images' ),
@@ -220,11 +217,11 @@ class Admin_Hooks {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'tidy-resize-images' ) ), 403 );
 		}
 
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- check_ajax_referer above.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- check_ajax_referer above.
 		$cursor  = isset( $_POST['cursor'] ) ? absint( wp_unslash( $_POST['cursor'] ) ) : 0;
 		$limit   = isset( $_POST['limit'] ) ? max( 1, min( 50, absint( wp_unslash( $_POST['limit'] ) ) ) ) : 5;
 		$dry_run = ! empty( $_POST['dry_run'] );
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		$bp     = new Bulk_Processor();
 		$result = $bp->run_batch( $cursor, $limit, $dry_run );
@@ -300,14 +297,10 @@ class Admin_Hooks {
 	 * @return void
 	 */
 	private function redirect_to_trash_page( string $notice ): void {
-		$url = add_query_arg(
-			'tri_notice',
-			$notice,
-			admin_url( 'admin.php?page=' . self::TRASH_MENU_SLUG )
-		);
+		$url = add_query_arg( 'tri_notice', $notice, admin_url( 'admin.php?page=' . self::TRASH_MENU_SLUG ) );
 
 		wp_safe_redirect( $url );
-		exit;
+		exit();
 	}
 
 	/**
@@ -323,28 +316,15 @@ class Admin_Hooks {
 	 * @return void
 	 */
 	public function enqueue_assets( string $hook_suffix ): void {
-		$is_plugin_page = ( self::SETTINGS_HOOK_SUFFIX === $hook_suffix )
-			|| ( self::TRASH_HOOK_SUFFIX === $hook_suffix )
-			|| ( self::BULK_HOOK_SUFFIX === $hook_suffix );
+		$is_plugin_page = '' !== $hook_suffix && in_array( $hook_suffix, $this->hook_suffixes, true );
 
 		if ( $is_plugin_page ) {
-			wp_enqueue_style(
-				'tri-admin',
-				$this->asset_url( 'assets/admin/tri-admin.css' ),
-				array(),
-				TRI_PLUGIN_VERSION
-			);
+			wp_enqueue_style( 'tri-admin', $this->asset_url( 'assets/admin/tri-admin.css' ), array(), TRI_PLUGIN_VERSION );
 
-			wp_enqueue_script(
-				'tri-admin',
-				$this->asset_url( 'assets/admin/tri-admin.js' ),
-				array(),
-				TRI_PLUGIN_VERSION,
-				true
-			);
+			wp_enqueue_script( 'tri-admin', $this->asset_url( 'assets/admin/tri-admin.js' ), array(), TRI_PLUGIN_VERSION, true );
 
 			// The bulk page needs the AJAX nonce + endpoint URL.
-			if ( self::BULK_HOOK_SUFFIX === $hook_suffix ) {
+			if ( $this->hook_suffixes['bulk'] === $hook_suffix ) {
 				wp_localize_script(
 					'tri-admin',
 					'triBulk',
@@ -358,7 +338,10 @@ class Admin_Hooks {
 							'stopped'      => __( 'Stopped.', 'tidy-resize-images' ),
 							'errored'      => __( 'Error.', 'tidy-resize-images' ),
 							'noCandidates' => __( 'No attachments need processing.', 'tidy-resize-images' ),
-							'confirmLive'  => __( 'Run a LIVE bulk processing pass? Originals will be backed up to Trash unless you have disabled backups in Settings → Behaviour.', 'tidy-resize-images' ),
+							'confirmLive'  => __(
+								'Run a LIVE bulk processing pass? Originals will be backed up to Trash unless you have disabled backups in Settings → Behaviour.',
+								'tidy-resize-images'
+							),
 						),
 					)
 				);
