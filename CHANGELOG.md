@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Capabilities` class: runtime detection of GD/Imagick and per-MIME
+  read+write support for JPEG, PNG, WebP, AVIF, GIF, and HEIC.
+  Used by the image processor to gate AVIF/HEIC behaviour and by the
+  future Status tab and `wp tidy-images caps` command.
 - Project scaffolding: entry file in the root namespace, namespaced classes
   under `includes/`, constants in `constants.php`, helpers in
   `functions-private.php`.
