@@ -37,6 +37,7 @@ require_once TRI_PLUGIN_DIR . 'includes/class-plugin.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-admin-hooks.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-capabilities.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-image-library.php';
+require_once TRI_PLUGIN_DIR . 'includes/class-image-processor.php';
 
 /**
  * Bootstrap the plugin: instantiate the orchestrator and register hooks.

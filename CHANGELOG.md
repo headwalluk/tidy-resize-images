@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   read+write support for JPEG, PNG, WebP, AVIF, GIF, and HEIC.
   Used by the image processor to gate AVIF/HEIC behaviour and by the
   future Status tab and `wp tidy-images caps` command.
+- `Image_Processor::plan()`: takes a source path and a ruleset, returns
+  a Plan describing what *would* happen — no filesystem mutation. Plan
+  shape is `{action, target_mime, quality, max_edge, strip_exif, reason,
+  source_meta}`. The decision flows through the new `tri_format_decision`
+  filter so external code (e.g. a future Expert mode mapping matrix)
+  can override without subclassing.
+- `Image_Processor::default_decision()`: the Simple/Auto branch table.
+  PNG-with-alpha → alpha-target; PNG-opaque/JPEG/WebP/HEIC/static-GIF →
+  lossy-target (with HEIC capability-gated and AVIF auto-falling-back to
+  WebP if the host can't write AVIF); animated GIF and SVG → skip.
+- `Image_Processor::default_rules()`: compiles the default ruleset from
+  the `DEF_*` constants. M3 will add `from_settings()` to read from
+  `wp_options`.
 - `Image_Library` class: thin wrapper around `WP_Image_Editor` with raw
   GD/Imagick reach-through. Exposes:
   - `get_meta()` — mime, dims, bytes, has_alpha, is_animated. Alpha is
