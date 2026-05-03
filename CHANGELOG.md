@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Bulk_Processor` class: the headline workflow. Two static methods:
+  `count_candidates()` returns the upfront total; `run_batch(
+  $cursor, $limit, $dry_run )` processes up to `$limit` attachments
+  with `ID > $cursor` and returns a Result containing totals, the
+  next cursor, a `done` flag, and a per-attachment log.
+  Cursor-based pagination is robust against deletions and resumable
+  across calls. Scan filters in SQL: image MIMEs only; skips
+  protected attachments and those already touched
+  (`_tri_processed_at` exists). Skip-memo (`_tri_conversion_skipped`)
+  is filtered in PHP per-attachment because the settings_hash lives
+  inside a serialised meta. Per-attachment work mirrors
+  `Upload_Handler::commit_mutation()` — backup → execute → swap →
+  regenerate intermediates → search-replace if filename changed
+  → mark `_tri_processed_at`. Honours dry-run.
 - Smoke-test runner `dev-notes/smoke-tests/search-replace.php`:
   exercises raw + JSON-escaped post_content rewrites, serialised
   postmeta (top-level + nested), JSON-encoded postmeta, _tri_* meta
