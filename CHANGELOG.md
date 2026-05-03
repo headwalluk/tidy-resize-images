@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   read+write support for JPEG, PNG, WebP, AVIF, GIF, and HEIC.
   Used by the image processor to gate AVIF/HEIC behaviour and by the
   future Status tab and `wp tidy-images caps` command.
+- `Image_Library` class: thin wrapper around `WP_Image_Editor` with raw
+  GD/Imagick reach-through. Exposes:
+  - `get_meta()` — mime, dims, bytes, has_alpha, is_animated. Alpha is
+    detected by parsing format headers (PNG IHDR, WebP VP8X) so we don't
+    pay the full decode cost just to answer the question.
+  - `resize( $max_edge )` — proportional, no-op if already within limit.
+  - `encode( $mime, $quality, $strip_exif, $tmp_path )` — writes the
+    transformed image to a temp path. Strips EXIF/XMP/IPTC via
+    `Imagick::stripImage()` when requested (GD encoding strips by default).
+  - `close()` — release resources.
 - Project scaffolding: entry file in the root namespace, namespaced classes
   under `includes/`, constants in `constants.php`, helpers in
   `functions-private.php`.
