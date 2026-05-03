@@ -1,6 +1,6 @@
 # Tidy Resize Images
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)
 ![WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759b.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.3%2B-777bb4.svg)
 ![License](https://img.shields.io/badge/license-GPLv2%2B-green.svg)

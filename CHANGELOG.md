@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+(Nothing yet.)
+
+## [0.2.0] - 2026-05-03
+
+First substantive release. The plugin now has a complete Settings UI, an
+Image Processor that can plan and execute conversions safely, an
+originals Trash with restore/purge, an Upload Handler, a serialised-data-
+aware DB Search & Replace, and an interactive Bulk Processor with a
+daily cron variant.
+
 ### Added
 - Daily cron variant for the bulk processor:
   `Tidy_Resize_Images\run_bulk_cron()` is registered against the
