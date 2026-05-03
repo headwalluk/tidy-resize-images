@@ -51,6 +51,18 @@ class Admin_Hooks {
 	private const TRASH_HOOK_SUFFIX = ADMIN_MENU_SLUG . '_page_' . ADMIN_MENU_SLUG . '-trash';
 
 	/**
+	 * Submenu slug for the Bulk admin page.
+	 */
+	private const BULK_MENU_SLUG = ADMIN_MENU_SLUG . '-bulk';
+
+	/**
+	 * Hook suffix for the Bulk submenu page.
+	 *
+	 * @var string
+	 */
+	private const BULK_HOOK_SUFFIX = ADMIN_MENU_SLUG . '_page_' . ADMIN_MENU_SLUG . '-bulk';
+
+	/**
 	 * Register the top-level admin menu entry.
 	 *
 	 * Hooked to admin_menu by Plugin::run().
@@ -84,6 +96,15 @@ class Admin_Hooks {
 
 		add_submenu_page(
 			ADMIN_MENU_SLUG,
+			__( 'Tidy Images — Bulk', 'tidy-resize-images' ),
+			__( 'Bulk', 'tidy-resize-images' ),
+			ADMIN_CAPABILITY,
+			self::BULK_MENU_SLUG,
+			array( $this, 'render_bulk_page' )
+		);
+
+		add_submenu_page(
+			ADMIN_MENU_SLUG,
 			__( 'Tidy Images — Trash', 'tidy-resize-images' ),
 			__( 'Trash', 'tidy-resize-images' ),
 			ADMIN_CAPABILITY,
@@ -112,6 +133,17 @@ class Admin_Hooks {
 	 */
 	public function render_trash_page(): void {
 		require TRI_PLUGIN_DIR . 'admin-templates/trash-page.php';
+	}
+
+	/**
+	 * Render the Bulk page by including its template.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	public function render_bulk_page(): void {
+		require TRI_PLUGIN_DIR . 'admin-templates/bulk-page.php';
 	}
 
 	/**
@@ -266,7 +298,8 @@ class Admin_Hooks {
 	 */
 	public function enqueue_assets( string $hook_suffix ): void {
 		$is_plugin_page = ( self::SETTINGS_HOOK_SUFFIX === $hook_suffix )
-			|| ( self::TRASH_HOOK_SUFFIX === $hook_suffix );
+			|| ( self::TRASH_HOOK_SUFFIX === $hook_suffix )
+			|| ( self::BULK_HOOK_SUFFIX === $hook_suffix );
 
 		if ( $is_plugin_page ) {
 			wp_enqueue_style(
@@ -283,6 +316,27 @@ class Admin_Hooks {
 				TRI_PLUGIN_VERSION,
 				true
 			);
+
+			// The bulk page needs the AJAX nonce + endpoint URL.
+			if ( self::BULK_HOOK_SUFFIX === $hook_suffix ) {
+				wp_localize_script(
+					'tri-admin',
+					'triBulk',
+					array(
+						'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+						'nonce'   => wp_create_nonce( 'tri_bulk_action' ),
+						'i18n'    => array(
+							'starting'     => __( 'Starting…', 'tidy-resize-images' ),
+							'processing'   => __( 'Processing…', 'tidy-resize-images' ),
+							'done'         => __( 'Done.', 'tidy-resize-images' ),
+							'stopped'      => __( 'Stopped.', 'tidy-resize-images' ),
+							'errored'      => __( 'Error.', 'tidy-resize-images' ),
+							'noCandidates' => __( 'No attachments need processing.', 'tidy-resize-images' ),
+							'confirmLive'  => __( 'Run a LIVE bulk processing pass? Originals will be backed up to Trash unless you have disabled backups in Settings → Behaviour.', 'tidy-resize-images' ),
+						),
+					)
+				);
+			}
 		}
 	}
 
