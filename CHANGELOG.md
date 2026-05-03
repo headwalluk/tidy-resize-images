@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Search_Replace` class: rewrites references to a renamed attachment
+  URL across `wp_posts.post_content` and `wp_postmeta.meta_value`.
+  Two URL forms handled at every string leaf — raw
+  (`https://site.tld/...`) and JSON-escaped
+  (`https:\/\/site.tld\/...`) — to cover values stored inside
+  Elementor JSON, Gutenberg blocks, ACF flexible content, etc.
+  Postmeta values are unserialised, recursively walked, and
+  reserialised to preserve PHP serialisation. Our own `_tri_*`
+  meta keys are skipped to avoid mutating backup state. Always
+  supports a `dry_run` mode that produces the same Report shape
+  with no DB writes. Returns a Report with per-table
+  rows_examined / rows_changed / samples (capped at 10 per table).
+  v1 scope: posts + postmeta only — `wp_options` and multisite
+  tables are deferred.
 - Smoke-test runner `dev-notes/smoke-tests/upload-handler.php`:
   inserts a synthetic 4000×3000 PNG with alpha + noise, triggers
   `wp_generate_attachment_metadata`, reports the post-processing
