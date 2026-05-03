@@ -8,6 +8,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Daily cron variant for the bulk processor:
+  `Tidy_Resize_Images\run_bulk_cron()` is registered against the
+  `tri_bulk_cron` hook, which is itself scheduled (daily, with a
+  one-hour delay from activation) by `tri_plugin_activate()` in the
+  entry-point file. `tri_plugin_deactivate()` clears the schedule on
+  deactivation. Each tick processes up to `DEF_CRON_BATCH_SIZE = 20`
+  candidates so large libraries are spread incrementally over many
+  days without spiking server load. Honours the operator's dry-run
+  setting.
+- Smoke-test runner `dev-notes/smoke-tests/bulk-runner.php`:
+  inserts two synthetic attachments (large alpha PNG + smaller
+  JPEG), runs count_candidates, then a dry batch followed by a live
+  batch, verifies post-state (`_tri_processed_at` set, MIME / file
+  extension correct), and confirms the second `count_candidates`
+  excludes the just-processed fixtures. Run with `wp eval-file
+  <path>`.
+- Bulk runner JS driver in `assets/admin/tri-admin.js`:
+  - Async AJAX loop (5 attachments per batch) calling
+    `wp_ajax_tri_bulk_step` until `done=true`
+  - Confirms before live runs, runs dry without confirmation
+  - Updates progress bar (capped at 100%), totals table, and
+    appends colour-coded log rows (committed=green, planned=blue,
+    skipped=grey, discarded=amber, errored=red)
+  - Stop button cancels further batches; in-flight request
+    completes
+  - Network errors surface to the status line
+  - HTML escaping for any operator-supplied strings (attachment
+    titles)
+- Bulk admin page under Tidy Images → Bulk:
+  - Server-renders the upfront candidate count via
+    `Bulk_Processor::count_candidates()`
+  - Shows current dry-run + backup-originals settings inline
+  - Pre-run warning banner about marking logos / brand assets as
+    do-not-touch
+  - Two start buttons (dry / live), Stop button, progress bar,
+    totals, log table — all driven by the JS module
+- Admin AJAX endpoints `tri_bulk_count` and `tri_bulk_step` on
+  `Admin_Hooks`. Both nonce-checked against `tri_bulk_action` and
+  capability-gated to `manage_options`. Step endpoint clamps the
+  batch limit to 1..50 server-side.
 - `Bulk_Processor` class: the headline workflow. Two static methods:
   `count_candidates()` returns the upfront total; `run_batch(
   $cursor, $limit, $dry_run )` processes up to `$limit` attachments

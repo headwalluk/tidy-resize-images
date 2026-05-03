@@ -2,8 +2,8 @@
 
 **Version:** 0.1.0-dev
 **Last Updated:** 2026-05-03
-**Current Phase:** Milestone 7 (Bulk Processor)
-**Overall Progress:** 60%
+**Current Phase:** Milestone 8 (Media Library UI)
+**Overall Progress:** 70%
 
 ---
 
@@ -23,22 +23,20 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### Up next (Milestone 7 — Bulk Processor)
+### Up next (Milestone 8 — Media Library UI)
 
-The headline workflow. Single shared `Bulk_Processor::run_batch()` runner
-consumed by the interactive admin UI, the scheduled-cron variant, and
-the WP-CLI command (M9).
+Surface protection, status, and on-demand processing in the standard
+Media Library list and edit screens. Also where the shared
+`Attachment_Processor` extraction (M7 deferral) lands so all three
+callers (Upload_Handler, Bulk_Processor, "Optimize Now" row action)
+share one commit pipeline.
 
-- [ ] `includes/class-bulk-processor.php` — `Bulk_Processor::run_batch( $limit, $cursor, $dry_run ): Result`
-- [ ] Scan: query attachments matching processor criteria (oversize / wrong-MIME / file-too-big), respecting protection and skip-memo
-- [ ] Per-attachment work: backup → execute → swap → regenerate → search-replace (when filename changed)
-- [ ] Cursor-based pagination so the runner is resumable and memory-bounded
-- [ ] Admin AJAX endpoints: `tri_bulk_start`, `tri_bulk_step`, `tri_bulk_stop`
-- [ ] Bulk page under Tidy Images → Bulk submenu, with progress UI and per-attachment log
-- [ ] Pre-run warning banner: "Mark logos and brand assets as 'do not touch' before bulk processing"
-- [ ] Dry-run mode showing predicted savings without mutation
-- [ ] Scheduled-cron variant: `wp_schedule_event` daily hook calling `run_batch` with a memory-safe limit
-- [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/bulk-runner.php`
+- [ ] Extract shared `Attachment_Processor::process( $attachment_id, $dry_run )` from the duplicated logic in Upload_Handler::commit_mutation and Bulk_Processor::commit_one
+- [ ] Media Library list-table column: "Tidy" — icons for protected / processed / has-backup / conversion-skipped
+- [ ] Row actions: Protect, Unprotect, Optimize Now, Restore Original (when backup exists)
+- [ ] Bulk actions: Protect, Unprotect, Optimize, Restore
+- [ ] Attachment edit screen meta box: protected toggle + processing log preview
+- [ ] AJAX endpoints for the row actions (with nonces)
 
 ---
 
@@ -123,19 +121,22 @@ v1 scope: posts + postmeta (no options, no multisite).
 - [x] Our own `_tri_*` meta keys are skipped to avoid mutating backup state
 - [x] `unserialize` uses `allowed_classes=false` to neutralise object-injection risk
 
-### M7 — Bulk Processor
+### M7 — Bulk Processor ✅
 Admin AJAX runner that processes existing attachments in batches.
 **This is the primary workflow** — interactive bulk runs, scheduled cron
 (below), and `wp tidy-images process --all` (M9) all share the runner.
 Upload-time processing (M5) is a lower-priority safety net.
 
-- [ ] Scan: query attachments matching processor criteria
-- [ ] `Bulk_Processor::run_batch( $limit, $cursor ): Result` — pure runner with bounded work; reusable by admin AJAX, WP-CLI, and cron
-- [ ] Admin AJAX runner that calls `run_batch` repeatedly, surfaces progress, handles stop/resume
-- [ ] Dry-run mode showing predicted savings
-- [ ] Per-attachment log displayed in UI
-- [ ] Pre-run warning banner: "Mark logos and brand assets as 'do not touch' before bulk processing — auto mode will not protect them for you."
-- [ ] **Scheduled cron variant:** `wp_schedule_event` registers a daily hook that invokes `run_batch` with a memory-safe `$limit`; idempotent so it picks up where it left off. Cron-scheduling UI deferred to M10 polish.
+- [x] Scan: SQL query for image attachments, ID > cursor, not protected, not already-processed
+- [x] `Bulk_Processor::run_batch( $cursor, $limit, $dry_run ): Result` — pure runner with bounded work; consumed by admin AJAX and the daily cron (and M9 WP-CLI)
+- [x] Admin AJAX endpoints (`tri_bulk_count`, `tri_bulk_step`) with capability + nonce checks
+- [x] Bulk admin page under Tidy Images → Bulk with start/stop buttons, progress bar, totals table, log table
+- [x] JS driver loops AJAX calls, accumulates totals, appends colour-coded log rows, supports stop mid-run
+- [x] Dry-run mode showing predicted actions without mutation
+- [x] Pre-run warning banner about marking logos / brand assets as do-not-touch
+- [x] Scheduled-cron variant: `wp_schedule_event` daily hook calling `run_batch` with `DEF_CRON_BATCH_SIZE=20`; activation/deactivation hooks register/unregister
+- [x] WP-CLI smoke-test snippet `dev-notes/smoke-tests/bulk-runner.php`
+- [ ] Cron-scheduling UI (interval/batch-size override) — deferred to M10 polish per agreement
 
 ### M8 — Media Library UI
 Surface protection, status, restore in the standard Media Library.
