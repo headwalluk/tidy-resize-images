@@ -2,8 +2,8 @@
 
 **Version:** 0.1.0-dev
 **Last Updated:** 2026-05-03
-**Current Phase:** Milestone 2 (Image Processor Core)
-**Overall Progress:** 10%
+**Current Phase:** Milestone 3 (Settings Page)
+**Overall Progress:** 20%
 
 ---
 
@@ -23,15 +23,17 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### Up next (Milestone 2 — Image Processor Core)
+### Up next (Milestone 3 — Settings Page)
 
-- [ ] `includes/class-capabilities.php` — runtime detection of GD/Imagick + WebP/AVIF/HEIC support
-- [ ] `includes/class-image-processor.php` skeleton with `plan()` and `execute()` stubs
-- [ ] `Image_Processor::default_decision()` — decision tree from tracker Notes section
-- [ ] `tri_format_decision` filter wired around the decision step
-- [ ] Failed-conversion memoisation (`_tri_conversion_skipped` meta + settings hash)
-- [ ] Strip-EXIF support (GD + Imagick paths)
-- [ ] WP-CLI smoke command `wp eval` snippet for testing the processor without admin UI
+- [ ] `includes/class-settings.php` — register settings, sanitisation callbacks
+- [ ] `admin-templates/settings-page.php` — tabbed UI shell (hash-based nav per `dev-notes/patterns/admin-tabs.md`)
+- [ ] Tab: Limits — max edge, max file size, per-context overrides
+- [ ] Tab: Format — Simple/Auto mode (lossy + alpha targets, per-format quality)
+- [ ] Tab: Format — Expert mode placeholder ("Coming soon")
+- [ ] Tab: Behaviour — dry-run, strip EXIF, backup originals, trash retention, MIME exclusions, search-replace scope
+- [ ] Tab: Status — counts, last run, capability detection summary
+- [ ] `Image_Processor::from_settings()` factory — read rules from `wp_options` instead of constants
+- [ ] Asset enqueueing in `Admin_Hooks` (CSS + JS for the tabbed UI)
 
 ---
 
@@ -49,17 +51,19 @@ warn on conflicts. No image work yet.
 - [x] Deactivate Imsanity on dev site
 - [x] `readme.txt`, `README.md`, `CHANGELOG.md`, `LICENSE` in place
 
-### M2 — Image Processor Core
+### M2 — Image Processor Core ✅
 Pure service class. Takes a file path + a ruleset, returns a "plan" describing
 what would change. No WP hooks, no DB, no I/O side effects beyond reading the
 source file. Easy to call from WP-CLI for testing.
 
-- [ ] Capability detection (GD vs Imagick, AVIF/WebP availability)
-- [ ] `Image_Processor::plan( $path, $rules ): Plan` — returns target format, target dimensions, target quality, predicted action
-- [ ] `Image_Processor::execute( Plan $plan ): Result` — actually transforms a file, returns success/fail + new metadata
-- [ ] Format decision tree (see Notes section)
-- [ ] Failed-conversion memoisation (settings hash)
-- [ ] Strip-EXIF support
+- [x] Capability detection (GD vs Imagick, AVIF/WebP/HEIC availability) — `Capabilities` class
+- [x] `Image_Library` wrapper (WP_Image_Editor + raw GD/Imagick reach-through)
+- [x] `Image_Processor::plan( $path, $rules ): array` — returns Plan with action/target/quality/max_edge/strip_exif/reason/source_meta
+- [x] `Image_Processor::execute( $plan, $path, ?$tmp_path ): array` — returns Result with success/committed/output_path/output_meta/savings/error; temp-file output, never mutates the source
+- [x] Format decision tree (Simple/Auto mode) with `tri_format_decision` filter
+- [x] Failed-conversion memoisation: `Skip_Memo` class + `Image_Processor::settings_hash()`
+- [x] Strip-EXIF support (Imagick `stripImage()` second pass; GD-encoded files are stripped natively)
+- [x] WP-CLI smoke-test snippet at `dev-notes/smoke-tests/processor-roundtrip.php`
 
 ### M3 — Settings Page
 Tabbed admin page. Fully drives the processor's ruleset.

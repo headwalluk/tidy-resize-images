@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Smoke-test runner `dev-notes/smoke-tests/processor-roundtrip.php`:
+  exercises `plan()` and `execute()` against three synthetic images
+  (large alpha PNG, tiny JPEG, SVG) covering the main branches of the
+  decision tree. Run with `wp eval-file <path>`.
 - `Capabilities` class: runtime detection of GD/Imagick and per-MIME
   read+write support for JPEG, PNG, WebP, AVIF, GIF, and HEIC.
   Used by the image processor to gate AVIF/HEIC behaviour and by the
