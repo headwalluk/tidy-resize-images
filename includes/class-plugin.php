@@ -41,6 +41,16 @@ class Plugin {
 	private ?Settings $settings = null;
 
 	/**
+	 * Lazy-loaded upload handler collaborator.
+	 *
+	 * Registers globally (not is_admin()-gated) — uploads can come from
+	 * the front-end too.
+	 *
+	 * @var Upload_Handler|null
+	 */
+	private ?Upload_Handler $upload_handler = null;
+
+	/**
 	 * Register all WordPress hooks.
 	 *
 	 * Front-end runs only the textdomain loader. Admin-only collaborators
@@ -53,6 +63,10 @@ class Plugin {
 	 */
 	public function run(): void {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+
+		// Upload handler must register globally — uploads can originate from
+		// front-end forms (REST endpoints, plugin upload widgets, etc.).
+		$this->get_upload_handler()->register_hooks();
 
 		if ( is_admin() ) {
 			$settings    = $this->get_settings();
@@ -110,5 +124,20 @@ class Plugin {
 		}
 
 		return $this->settings;
+	}
+
+	/**
+	 * Get (and lazily instantiate) the Upload_Handler collaborator.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Upload_Handler
+	 */
+	public function get_upload_handler(): Upload_Handler {
+		if ( is_null( $this->upload_handler ) ) {
+			$this->upload_handler = new Upload_Handler();
+		}
+
+		return $this->upload_handler;
 	}
 }
