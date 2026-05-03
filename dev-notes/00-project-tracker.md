@@ -26,13 +26,19 @@ ignores file-size-only problems and offers no restore path.
 ### Up next (Milestone 6 — DB Search & Replace)
 
 - [ ] `includes/class-search-replace.php` — `rewrite( $old_url, $new_url, $scope ): Report` core
-- [ ] Serialized-safe walker (unserialize → walk → reserialize) for `wp_postmeta` and `wp_options`
-- [ ] Scope toggles: posts (raw string replace on `post_content`), postmeta (walker), options (walker, scoped to allow-list of option names)
+- [ ] Serialized-safe walker (unserialize → walk → reserialize) for `wp_postmeta`
+- [ ] Replace BOTH raw (`https://...`) and JSON-escaped (`https:\/\/...`) forms at every string leaf — covers Elementor, Gutenberg, ACF flexible content, etc.
+- [ ] Scope toggles: posts (raw string replace on `post_content`), postmeta (walker)
 - [ ] Dry-run report enumerating paths, counts, and sample matched rows
-- [ ] Integration with Upload_Handler's commit step: when MIME conversion changes the filename, automatically rewrite DB references and clear `filename_changed=true` from the backup record on success
-- [ ] Wire to Trash_Manager::restore so DB references are reverted on restore (filename_changed-aware)
-- [ ] Behaviour tab UI: search-replace scope checkboxes (posts / postmeta / options) and the option-name allow-list
+- [ ] `rewrite_attachment_rename( $attachment_id, $old_meta, $new_meta )` convenience that derives all sub-size rename pairs (logo.png + logo-150x150.png + ... → logo.webp + logo-150x150.webp + ...) and calls `rewrite()` for each
+- [ ] Wire into Trash_Manager::restore() so DB references revert when a backup is restored (filename_changed-aware)
+- [ ] Behaviour tab UI: search-replace scope checkboxes (posts / postmeta)
 - [ ] WP-CLI smoke-test snippet `dev-notes/smoke-tests/search-replace.php`
+
+**Out of scope for v1 / Future:**
+- `wp_options` rewrites — edge cases (page-builder global libraries, customizer settings). Easier to add as opt-in later than to ship default-on and surprise operators.
+- Multisite tables — `wp_*_posts`, `wp_*_postmeta`. Out for v1.
+- Auto-trigger from Upload_Handler — brand-new uploads have no DB references to rewrite (attachment was just inserted). Search-replace is triggered from bulk processor (M7), Media Library "Optimize Now" action (M8), and Trash_Manager::restore() only.
 
 ---
 
@@ -106,12 +112,14 @@ not gold-plate; it's the safety net, not the headline feature.
 
 ### M6 — DB Search & Replace
 Required before bulk processor can rename safely. Serialized-data-aware.
+v1 scope: posts + postmeta (no options, no multisite).
 
 - [ ] `Search_Replace::rewrite( $old_url, $new_url, $scope ): Report`
-- [ ] Serialized-safe walker for postmeta / options
+- [ ] Serialized-safe walker for postmeta (matches both raw and JSON-escaped URLs)
 - [ ] Dry-run report (paths, counts, sample rows)
-- [ ] Scope toggles (posts, postmeta, options, configurable allow-list)
-- [ ] Update `_wp_attached_file` and `_wp_attachment_metadata` (sub-size filenames)
+- [ ] `rewrite_attachment_rename( $id, $old_meta, $new_meta )` convenience for sub-size rename batching
+- [ ] Scope toggles in Behaviour tab (posts / postmeta)
+- [ ] Trash_Manager::restore() integration for reverse rewrite
 
 ### M7 — Bulk Processor
 Admin AJAX runner that processes existing attachments in batches.
