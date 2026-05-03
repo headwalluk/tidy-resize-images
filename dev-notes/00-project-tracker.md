@@ -91,10 +91,15 @@ restore metadata in `_tri_backup` post meta, provide restore.
 ### M5 — Upload Handler
 Hook the WP upload pipeline so new uploads are processed at arrival.
 
-- [ ] `wp_handle_upload_prefilter` — early gate
+**Lower-priority workflow** — operator preference is to skip upload-time
+processing on their own sites and rely on the daily cron run instead
+(see M7's scheduled cron variant). Build M5 cleanly per the plan but do
+not gold-plate; it's the safety net, not the headline feature.
+
 - [ ] `big_image_size_threshold` — disable WP scaled-rotation if our limit is lower
 - [ ] `wp_generate_attachment_metadata` — final pass after intermediate sizes
-- [ ] Front-end vs admin context detection
+- [ ] Trash_Manager::backup before any mutation
+- [ ] Skip_Memo::record after a `result_larger_than_source` discard
 
 ### M6 — DB Search & Replace
 Required before bulk processor can rename safely. Serialized-data-aware.
@@ -106,14 +111,18 @@ Required before bulk processor can rename safely. Serialized-data-aware.
 - [ ] Update `_wp_attached_file` and `_wp_attachment_metadata` (sub-size filenames)
 
 ### M7 — Bulk Processor
-Admin AJAX runner that processes existing attachments in batches. Dry-run first.
+Admin AJAX runner that processes existing attachments in batches.
+**This is the primary workflow** — interactive bulk runs, scheduled cron
+(below), and `wp tidy-images process --all` (M9) all share the runner.
+Upload-time processing (M5) is a lower-priority safety net.
 
 - [ ] Scan: query attachments matching processor criteria
-- [ ] Batch runner with progress UI
+- [ ] `Bulk_Processor::run_batch( $limit, $cursor ): Result` — pure runner with bounded work; reusable by admin AJAX, WP-CLI, and cron
+- [ ] Admin AJAX runner that calls `run_batch` repeatedly, surfaces progress, handles stop/resume
 - [ ] Dry-run mode showing predicted savings
 - [ ] Per-attachment log displayed in UI
-- [ ] Stop / resume
 - [ ] Pre-run warning banner: "Mark logos and brand assets as 'do not touch' before bulk processing — auto mode will not protect them for you."
+- [ ] **Scheduled cron variant:** `wp_schedule_event` registers a daily hook that invokes `run_batch` with a memory-safe `$limit`; idempotent so it picks up where it left off. Cron-scheduling UI deferred to M10 polish.
 
 ### M8 — Media Library UI
 Surface protection, status, restore in the standard Media Library.
