@@ -7,7 +7,7 @@
 
 A WordPress plugin for keeping the Media Library lean. It resizes oversized
 uploads, converts unsuitable file formats, and recompresses bloated files —
-with originals safely backed up, dry-run preview, and full WP-CLI control.
+with originals safely backed up and a dry-run preview.
 
 ## Who it's for
 
@@ -17,12 +17,22 @@ with originals safely backed up, dry-run preview, and full WP-CLI control.
   format-decision logic, bulk-processing integrations, etc.) instead of
   fighting a large SaaS-coupled image optimizer.
 
-## Documentation
+## What's in v0.2.0
 
-- [Getting started](docs/getting-started.md) — install, configure, first run.
-- [WP-CLI reference](docs/wp-cli.md) — the full command surface.
-- [Filter hooks](docs/hooks.md) — extending behaviour from your own code.
-- [Contributing](docs/contributing.md) — code standards, dev workflow.
+- Settings UI (limits, format targets, behaviour, capability status)
+- Image Processor with a format-decision tree (PNG/JPEG/WebP/AVIF/HEIC/GIF) and a `tri_format_decision` filter for custom rules
+- Originals Trash with one-click restore (Tidy Images → Trash)
+- Upload-time hook (resize + convert + recompress new uploads)
+- Database search-and-replace, serialised-data-aware, when filenames change
+- Bulk Processor with admin AJAX runner + daily cron variant
+
+## In development
+
+- Media Library row actions and "Tidy" status column (target: v0.3.0)
+- WP-CLI commands (target: v0.3.0)
+- Auto-purge of trashed originals + translations (target: v0.3.0)
+
+Operator and developer docs land in `docs/` closer to v1.0.
 
 ## Requirements
 
