@@ -147,6 +147,60 @@ class Admin_Hooks {
 	}
 
 	/**
+	 * AJAX: return the candidate count for a bulk run.
+	 *
+	 * Used by the bulk admin page to show the upfront total.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	public function ajax_bulk_count(): void {
+		check_ajax_referer( 'tri_bulk_action', 'nonce' );
+
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'tidy-resize-images' ) ), 403 );
+		}
+
+		$bp = new Bulk_Processor();
+
+		wp_send_json_success( array( 'count' => $bp->count_candidates() ) );
+	}
+
+	/**
+	 * AJAX: process one batch and return the Result.
+	 *
+	 * The JS driver calls this repeatedly until `done=true`.
+	 *
+	 * Inputs:
+	 *   - cursor   (int) Largest ID already processed (start with 0).
+	 *   - limit    (int) Batch size; clamped 1..50, default 5.
+	 *   - dry_run  (bool/'1') When set, plan without mutating.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return void
+	 */
+	public function ajax_bulk_step(): void {
+		check_ajax_referer( 'tri_bulk_action', 'nonce' );
+
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'tidy-resize-images' ) ), 403 );
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- check_ajax_referer above.
+		$cursor  = isset( $_POST['cursor'] ) ? absint( wp_unslash( $_POST['cursor'] ) ) : 0;
+		$limit   = isset( $_POST['limit'] ) ? max( 1, min( 50, absint( wp_unslash( $_POST['limit'] ) ) ) ) : 5;
+		$dry_run = ! empty( $_POST['dry_run'] );
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
+		$bp     = new Bulk_Processor();
+		$result = $bp->run_batch( $cursor, $limit, $dry_run );
+
+		wp_send_json_success( $result );
+	}
+
+	/**
 	 * Validate a Trash-page action request and return the attachment ID.
 	 *
 	 * Aborts with `wp_die()` on any failure (missing capability, missing

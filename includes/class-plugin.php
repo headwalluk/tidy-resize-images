@@ -78,6 +78,8 @@ class Plugin {
 			add_action( 'admin_enqueue_scripts', array( $admin_hooks, 'enqueue_assets' ) );
 			add_action( 'admin_post_tri_trash_restore', array( $admin_hooks, 'handle_trash_restore' ) );
 			add_action( 'admin_post_tri_trash_purge', array( $admin_hooks, 'handle_trash_purge' ) );
+			add_action( 'wp_ajax_tri_bulk_count', array( $admin_hooks, 'ajax_bulk_count' ) );
+			add_action( 'wp_ajax_tri_bulk_step', array( $admin_hooks, 'ajax_bulk_step' ) );
 		}
 	}
 
