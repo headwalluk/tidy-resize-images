@@ -1,0 +1,19 @@
+# Claude Code local settings (per-user, do not share).
+.claude/
+
+# Editor and OS artifacts.
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Build / dependency directories (none used yet, defensive).
+build/
+dist/
+node_modules/
+vendor/
+
+# Generated phpcs reports.
+phpcs-report.*

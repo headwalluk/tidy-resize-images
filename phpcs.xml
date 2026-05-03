@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<ruleset name="Tidy Resize Images Standards">
+	<description>WordPress Coding Standards for the Tidy Resize Images plugin.</description>
+
+	<file>.</file>
+
+	<!-- Exclude patterns. -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/assets/*</exclude-pattern>
+	<exclude-pattern>*/.git/*</exclude-pattern>
+	<exclude-pattern>*/.github/*</exclude-pattern>
+	<exclude-pattern>*/dev-notes/*</exclude-pattern>
+	<exclude-pattern>*/docs/*</exclude-pattern>
+	<exclude-pattern>*/build/*</exclude-pattern>
+
+	<!-- Arguments. -->
+	<arg value="sp"/>
+	<arg name="basepath" value="."/>
+	<arg name="colors"/>
+	<arg name="extensions" value="php"/>
+	<arg name="parallel" value="8"/>
+
+	<!-- Rules. -->
+	<rule ref="WordPress">
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+	</rule>
+
+	<!-- Allowed prefixes for global symbols. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="tidy_resize_images"/>
+				<element value="tri"/>
+				<element value="Tidy_Resize_Images"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Recognised text domains. -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="tidy-resize-images"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Minimum supported WordPress version. -->
+	<config name="minimum_wp_version" value="6.2"/>
+</ruleset>
