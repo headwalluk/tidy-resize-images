@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Search_Replace::rewrite_attachment_rename( $id, $old_meta, $new_meta, $scope, $dry_run )`:
+  derives every `(old_url, new_url)` rename pair by comparing
+  before/after `_wp_attachment_metadata` arrays — full-size + every
+  intermediate size whose basename has changed + the WP-core
+  `original_image` (when present and renamed) — then calls `rewrite()`
+  for each pair and accumulates a single combined Report. The
+  combined Report adds `attachment_id`, `pairs_processed`, and
+  `pairs` fields. Intended for the M5 / M7 / M8 commit step when a
+  processor changes a file's MIME.
 - `Search_Replace` class: rewrites references to a renamed attachment
   URL across `wp_posts.post_content` and `wp_postmeta.meta_value`.
   Two URL forms handled at every string leaf — raw

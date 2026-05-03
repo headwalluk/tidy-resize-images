@@ -117,6 +117,183 @@ class Search_Replace {
 	}
 
 	/**
+	 * Rewrite all URL references for an attachment whose files have been
+	 * renamed (e.g. PNG → WebP conversion).
+	 *
+	 * Derives every `(old_url, new_url)` rename pair by comparing the
+	 * before/after `_wp_attachment_metadata` arrays — full-size + every
+	 * intermediate size + the WP-core `original_image` (when present) —
+	 * then calls `rewrite()` for each pair, accumulating a single Report.
+	 *
+	 * Intended for the M5 / M7 / M8 commit step: when the processor
+	 * changes a file's MIME, the caller passes the original metadata
+	 * (captured before the swap) and the new metadata (from
+	 * `wp_create_image_subsizes()` on the converted file).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int                  $attachment_id Attachment post ID.
+	 * @param array<string, mixed> $old_meta      Pre-swap metadata.
+	 * @param array<string, mixed> $new_meta      Post-swap metadata.
+	 * @param array<string, bool>  $scope         { 'posts' => bool, 'postmeta' => bool }.
+	 * @param bool                 $dry_run       No DB writes if true.
+	 *
+	 * @return array<string, mixed> Report with `attachment_id` and
+	 *                              `pairs_processed` added.
+	 */
+	public function rewrite_attachment_rename(
+		int $attachment_id,
+		array $old_meta,
+		array $new_meta,
+		array $scope = array(),
+		bool $dry_run = false
+	): array {
+		$pairs    = $this->derive_rename_pairs( $old_meta, $new_meta );
+		$combined = $this->blank_report( $dry_run );
+
+		$combined['attachment_id']   = $attachment_id;
+		$combined['pairs_processed'] = count( $pairs );
+		$combined['pairs']           = $pairs;
+
+		foreach ( $pairs as $pair ) {
+			$report   = $this->rewrite( $pair['old_url'], $pair['new_url'], $scope, $dry_run );
+			$combined = $this->merge_report( $combined, $report );
+		}
+
+		return $combined;
+	}
+
+	/**
+	 * Derive every `(old_url, new_url)` rename pair from before/after
+	 * `_wp_attachment_metadata` arrays.
+	 *
+	 * Yields pairs for the full-size file, every intermediate size whose
+	 * basename has changed, and the WP-core `original_image` (when
+	 * present and renamed).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $old_meta Pre-swap metadata.
+	 * @param array<string, mixed> $new_meta Post-swap metadata.
+	 *
+	 * @return array<int, array{old_url: string, new_url: string}>
+	 */
+	private function derive_rename_pairs( array $old_meta, array $new_meta ): array {
+		$upload   = wp_upload_dir();
+		$base_url = trailingslashit( (string) ( $upload['baseurl'] ?? '' ) );
+
+		$old_file = (string) ( $old_meta['file'] ?? '' );
+		$new_file = (string) ( $new_meta['file'] ?? '' );
+
+		$pairs = array();
+
+		// Full-size.
+		if ( '' !== $old_file && '' !== $new_file && $old_file !== $new_file ) {
+			$pairs[] = array(
+				'old_url' => $base_url . $old_file,
+				'new_url' => $base_url . $new_file,
+			);
+		}
+
+		// Intermediate sizes live in the same dir as the full-size file.
+		$old_dir_url = '' !== $old_file ? $base_url . trailingslashit( dirname( $old_file ) ) : '';
+		$new_dir_url = '' !== $new_file ? $base_url . trailingslashit( dirname( $new_file ) ) : '';
+
+		$old_sizes = isset( $old_meta['sizes'] ) && is_array( $old_meta['sizes'] ) ? $old_meta['sizes'] : array();
+		$new_sizes = isset( $new_meta['sizes'] ) && is_array( $new_meta['sizes'] ) ? $new_meta['sizes'] : array();
+
+		foreach ( $old_sizes as $size_key => $old_size ) {
+			$old_basename = (string) ( $old_size['file'] ?? '' );
+			$new_basename = (string) ( $new_sizes[ $size_key ]['file'] ?? '' );
+
+			if ( '' !== $old_basename && '' !== $new_basename && $old_basename !== $new_basename ) {
+				$pairs[] = array(
+					'old_url' => $old_dir_url . $old_basename,
+					'new_url' => $new_dir_url . $new_basename,
+				);
+			}
+		}
+
+		// WP's `original_image` (kept by big_image_size_threshold scaling).
+		$old_orig = (string) ( $old_meta['original_image'] ?? '' );
+		$new_orig = (string) ( $new_meta['original_image'] ?? '' );
+
+		if ( '' !== $old_orig && '' !== $new_orig && $old_orig !== $new_orig ) {
+			$pairs[] = array(
+				'old_url' => $old_dir_url . $old_orig,
+				'new_url' => $new_dir_url . $new_orig,
+			);
+		}
+
+		return $pairs;
+	}
+
+	/**
+	 * Build an empty Report with default zero values.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param bool $dry_run Whether the upcoming run is a dry-run.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function blank_report( bool $dry_run ): array {
+		return array(
+			'success' => true,
+			'dry_run' => $dry_run,
+			'old_url' => '',
+			'new_url' => '',
+			'tables'  => array(
+				'posts'    => array(
+					'rows_examined' => 0,
+					'rows_changed'  => 0,
+					'samples'       => array(),
+				),
+				'postmeta' => array(
+					'rows_examined' => 0,
+					'rows_changed'  => 0,
+					'samples'       => array(),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Merge a per-pair Report into a running accumulator.
+	 *
+	 * Sums rows_examined and rows_changed; appends samples up to
+	 * SAMPLE_LIMIT total per table; carries any failure flag.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $accumulator Running total.
+	 * @param array<string, mixed> $latest      One pair's Report.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function merge_report( array $accumulator, array $latest ): array {
+		foreach ( array( 'posts', 'postmeta' ) as $table ) {
+			$accumulator['tables'][ $table ]['rows_examined'] += (int) ( $latest['tables'][ $table ]['rows_examined'] ?? 0 );
+			$accumulator['tables'][ $table ]['rows_changed']  += (int) ( $latest['tables'][ $table ]['rows_changed'] ?? 0 );
+
+			$room = self::SAMPLE_LIMIT - count( $accumulator['tables'][ $table ]['samples'] );
+
+			if ( $room > 0 ) {
+				$accumulator['tables'][ $table ]['samples'] = array_merge(
+					$accumulator['tables'][ $table ]['samples'],
+					array_slice( (array) ( $latest['tables'][ $table ]['samples'] ?? array() ), 0, $room )
+				);
+			}
+		}
+
+		if ( empty( $latest['success'] ) ) {
+			$accumulator['success'] = false;
+		}
+
+		return $accumulator;
+	}
+
+	/**
 	 * Rewrite occurrences in `wp_posts.post_content`.
 	 *
 	 * @since 0.1.0
