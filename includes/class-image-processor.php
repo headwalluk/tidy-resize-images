@@ -17,8 +17,10 @@ defined( 'ABSPATH' ) || die();
  * - `plan( $path, $rules )` — read the source, run the decision tree, return
  *   a Plan describing what *would* happen. No filesystem mutation. Cheap to
  *   call repeatedly.
- * - `execute( $plan, $path, $tmp_path )` — actually transform the image,
- *   write to a temp path, return a Result. Lands in M2.4.
+ * - `execute( $plan, $path, $tmp_path )` — carry out the transform, write
+ *   to a temp path, return a Result. The on-disk swap (replacing the source
+ *   with the temp file) and the DB rewrites belong to Trash_Manager (M4)
+ *   and Search_Replace (M6).
  *
  * The decision step flows through the `tri_format_decision` filter so a
  * future Expert mode (or any third-party plugin) can override the default
@@ -111,20 +113,39 @@ class Image_Processor {
 	 * @return array<string, mixed> Plan.
 	 */
 	public function plan( string $source_path, array $rules ): array {
-		$lib         = new Image_Library( $source_path, $this->caps );
-		$source_meta = $lib->get_meta();
-		$lib->close();
+		$excluded = isset( $rules['excluded_mimes'] ) && is_array( $rules['excluded_mimes'] )
+			? $rules['excluded_mimes']
+			: array();
 
-		$decision = array();
+		// Early MIME check — catches vector formats (SVG) and other
+		// excluded MIMEs before we attempt a raster decode that would
+		// fail for non-raster formats. We don't rely on wp_check_filetype
+		// alone because WordPress excludes SVG from its allowed-MIMEs
+		// list by default.
+		$ext_mime        = $this->detect_mime( $source_path );
+		$excluded_by_ext = '' !== $ext_mime && in_array( $ext_mime, $excluded, true );
 
-		if ( empty( $source_meta ) ) {
-			$decision = $this->skip_plan( 'source_unreadable' );
+		$source_meta = array();
+		$decision    = array();
+
+		if ( $excluded_by_ext ) {
+			$source_meta = array(
+				'mime'        => $ext_mime,
+				'width'       => 0,
+				'height'      => 0,
+				'bytes'       => 0,
+				'has_alpha'   => false,
+				'is_animated' => false,
+			);
+			$decision    = $this->skip_plan( 'excluded_mime' );
 		} else {
-			$excluded = isset( $rules['excluded_mimes'] ) && is_array( $rules['excluded_mimes'] )
-				? $rules['excluded_mimes']
-				: array();
+			$lib         = new Image_Library( $source_path, $this->caps );
+			$source_meta = $lib->get_meta();
+			$lib->close();
 
-			if ( in_array( $source_meta['mime'], $excluded, true ) ) {
+			if ( empty( $source_meta ) ) {
+				$decision = $this->skip_plan( 'source_unreadable' );
+			} elseif ( in_array( $source_meta['mime'], $excluded, true ) ) {
 				$decision = $this->skip_plan( 'excluded_mime' );
 			} else {
 				$decision = $this->default_decision( $source_meta, $rules );
@@ -275,6 +296,187 @@ class Image_Processor {
 			'strip_exif'  => (bool) ( $rules['strip_exif'] ?? true ),
 			'reason'      => $reason,
 		);
+	}
+
+	/**
+	 * Carry out the transform described by a Plan and write the output
+	 * to a temp path.
+	 *
+	 * Implements the "result-larger-than-source" rule from the format
+	 * decision tree: if the encoded output is at least as large as the
+	 * source AND no dimension change occurred, the output is discarded
+	 * and the Result is marked `committed=false` with reason
+	 * `result_larger_than_source`. Callers (M2.5) translate that into the
+	 * `_tri_conversion_skipped` memoisation marker.
+	 *
+	 * Returned Result shape:
+	 *   array(
+	 *     'success'         => bool,    // false only on hard failure (encode error etc.)
+	 *     'committed'       => bool,    // true if we kept the output, false if discarded
+	 *     'output_path'     => string,  // temp file path; '' if not committed
+	 *     'output_meta'     => array,   // mime/dims/bytes of output; empty if not committed
+	 *     'reason'          => string,  // 'committed' | 'result_larger_than_source' | plan reason | error reason
+	 *     'savings_bytes'   => int,     // source - output (negative if output grew)
+	 *     'savings_percent' => float,   // 0.0 if not committed
+	 *     'error'           => string,  // empty on success
+	 *   )
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $plan        Plan from plan().
+	 * @param string               $source_path Absolute path to the source image.
+	 * @param string|null          $tmp_path    Optional temp output path; auto-generated if null.
+	 *
+	 * @return array<string, mixed> Result.
+	 */
+	public function execute( array $plan, string $source_path, ?string $tmp_path = null ): array {
+		$result = $this->empty_result();
+
+		// Guard clause: skip plans short-circuit before any I/O.
+		if ( 'skip' === ( $plan['action'] ?? 'skip' ) ) {
+			$result['success'] = true;
+			$result['reason']  = $plan['reason'] ?? 'skipped';
+			return $result;
+		}
+
+		$source_meta  = isset( $plan['source_meta'] ) && is_array( $plan['source_meta'] ) ? $plan['source_meta'] : array();
+		$source_bytes = (int) ( $source_meta['bytes'] ?? 0 );
+		$target_mime  = (string) ( $plan['target_mime'] ?? '' );
+		$quality      = (int) ( $plan['quality'] ?? 0 );
+		$strip_exif   = (bool) ( $plan['strip_exif'] ?? false );
+		$max_edge     = $plan['max_edge'] ?? null;
+
+		if ( is_null( $tmp_path ) ) {
+			$tmp_path = $this->generate_tmp_path( $target_mime );
+		}
+
+		$lib     = new Image_Library( $source_path, $this->caps );
+		$proceed = true;
+
+		if ( is_int( $max_edge ) && ! $lib->resize( $max_edge ) ) {
+			$err              = $lib->get_last_error();
+			$result['error']  = ! is_null( $err ) ? $err->get_error_message() : __( 'Resize failed.', 'tidy-resize-images' );
+			$result['reason'] = 'resize_failed';
+			$proceed          = false;
+		}
+
+		$written = '';
+
+		if ( $proceed ) {
+			$written = $lib->encode( $target_mime, $quality, $strip_exif, $tmp_path );
+
+			if ( '' === $written ) {
+				$err              = $lib->get_last_error();
+				$result['error']  = ! is_null( $err ) ? $err->get_error_message() : __( 'Encode failed.', 'tidy-resize-images' );
+				$result['reason'] = 'encode_failed';
+				$proceed          = false;
+			}
+		}
+
+		$lib->close();
+
+		if ( $proceed ) {
+			$output_filesize = filesize( $written );
+			$output_bytes    = is_int( $output_filesize ) ? $output_filesize : 0;
+			$no_dim_change   = is_null( $max_edge );
+
+			if ( $output_bytes >= $source_bytes && $no_dim_change ) {
+				wp_delete_file( $written );
+				$result['success']       = true;
+				$result['committed']     = false;
+				$result['reason']        = 'result_larger_than_source';
+				$result['savings_bytes'] = $source_bytes - $output_bytes;
+			} else {
+				$output_lib  = new Image_Library( $written, $this->caps );
+				$output_meta = $output_lib->get_meta();
+				$output_lib->close();
+
+				$result['success']         = true;
+				$result['committed']       = true;
+				$result['output_path']     = $written;
+				$result['output_meta']     = $output_meta;
+				$result['reason']          = 'committed';
+				$result['savings_bytes']   = $source_bytes - $output_bytes;
+				$result['savings_percent'] = $source_bytes > 0
+					? round( ( $source_bytes - $output_bytes ) / $source_bytes * 100, 1 )
+					: 0.0;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Build an empty Result with default zero values.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function empty_result(): array {
+		return array(
+			'success'         => false,
+			'committed'       => false,
+			'output_path'     => '',
+			'output_meta'     => array(),
+			'reason'          => '',
+			'savings_bytes'   => 0,
+			'savings_percent' => 0.0,
+			'error'           => '',
+		);
+	}
+
+	/**
+	 * Detect a file's MIME type, with fallback for formats WordPress
+	 * blocks from its allowed-uploads list (notably SVG).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $path Absolute path to the file.
+	 *
+	 * @return string MIME type, or empty string if unknown.
+	 */
+	private function detect_mime( string $path ): string {
+		$filetype = wp_check_filetype( $path );
+		$mime     = (string) ( $filetype['type'] ?? '' );
+
+		if ( '' === $mime && function_exists( 'mime_content_type' ) ) {
+			$sniffed = mime_content_type( $path );
+
+			if ( false !== $sniffed ) {
+				$mime = (string) $sniffed;
+			}
+		}
+
+		return $mime;
+	}
+
+	/**
+	 * Generate a unique temp output path with the appropriate extension
+	 * for the target MIME.
+	 *
+	 * Does not actually create the file on disk — the path is reserved
+	 * by uniqueness of the UUID. Image_Library::encode() creates the
+	 * file when it writes.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $target_mime e.g. 'image/webp'.
+	 *
+	 * @return string Absolute path under the WP temp directory.
+	 */
+	private function generate_tmp_path( string $target_mime ): string {
+		$ext_map = array(
+			MIME_JPEG => 'jpg',
+			MIME_PNG  => 'png',
+			MIME_WEBP => 'webp',
+			MIME_AVIF => 'avif',
+			MIME_GIF  => 'gif',
+		);
+
+		$ext = $ext_map[ $target_mime ] ?? 'tmp';
+
+		return get_temp_dir() . 'tri_' . wp_generate_uuid4() . '.' . $ext;
 	}
 
 	/**

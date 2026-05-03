@@ -17,7 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shape is `{action, target_mime, quality, max_edge, strip_exif, reason,
   source_meta}`. The decision flows through the new `tri_format_decision`
   filter so external code (e.g. a future Expert mode mapping matrix)
-  can override without subclassing.
+  can override without subclassing. Includes an early MIME detector
+  (wp_check_filetype with mime_content_type fallback) so excluded
+  vector formats like SVG are caught before any raster decode attempt.
+- `Image_Processor::execute()`: carries out the transform described by
+  a Plan. Resizes (if max_edge set), encodes to target_mime at the
+  configured quality, optionally strips EXIF — all into a temp path
+  under `get_temp_dir()`. Implements the "result-larger-than-source AND
+  no dimension change → discard" rule (the discarded-output Result has
+  `committed=false` and `reason='result_larger_than_source'`, ready for
+  the M2.5 memoisation marker). Returns a Result with success flag,
+  committed flag, output path/meta, savings (bytes + percent), and
+  error message on hard failure.
 - `Image_Processor::default_decision()`: the Simple/Auto branch table.
   PNG-with-alpha → alpha-target; PNG-opaque/JPEG/WebP/HEIC/static-GIF →
   lossy-target (with HEIC capability-gated and AVIF auto-falling-back to
