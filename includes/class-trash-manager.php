@@ -142,11 +142,15 @@ class Trash_Manager {
 				if ( @rename( $trash_path, $orig_path ) ) {
 					update_attached_file( $attachment_id, $orig_path );
 
-					if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+					if ( ! function_exists( 'wp_create_image_subsizes' ) ) {
 						require_once ABSPATH . 'wp-admin/includes/image.php';
 					}
 
-					$metadata = wp_generate_attachment_metadata( $attachment_id, $orig_path );
+					// Use wp_create_image_subsizes (not wp_generate_attachment_metadata)
+					// so the wp_generate_attachment_metadata filter does not fire.
+					// Otherwise Upload_Handler's filter would treat the just-restored
+					// file as a fresh upload and immediately re-process it.
+					$metadata = wp_create_image_subsizes( $orig_path, $attachment_id );
 
 					if ( is_array( $metadata ) ) {
 						wp_update_attachment_metadata( $attachment_id, $metadata );

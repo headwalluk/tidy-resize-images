@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Upload_Handler` full processing pipeline on
+  `wp_generate_attachment_metadata`. Pre-condition guard checks
+  (context, protected flag, dry-run, skip-memo) live in
+  `should_process()`; the work lives in `run_pipeline()` and
+  `commit_mutation()`. Honours per-attachment protection, dry-run,
+  and skip-memo settings. Backs up before mutation (when
+  `backup_originals=true`); records skip-memo on
+  result-larger-than-source discards; sets `filename_changed=true` on
+  the backup record when MIME conversion changed the filename;
+  regenerates intermediate sizes for the new file via
+  `wp_create_image_subsizes()` (with self-unhook to avoid recursion);
+  marks `_tri_processed_at`.
+- `Upload_Handler::compute_final_path()` derives the destination path
+  by swapping the source extension to match the target MIME (no
+  rename when target equals source; treats `.jpg`/`.jpeg` as
+  equivalent).
+
+### Fixed
+- `Trash_Manager::restore()` now calls `wp_create_image_subsizes()`
+  directly instead of `wp_generate_attachment_metadata()`. The latter
+  fires the `wp_generate_attachment_metadata` filter, which would
+  cause `Upload_Handler::process_after_metadata()` to treat the
+  just-restored file as a fresh upload and re-process it back to the
+  converted format. Caught by the M5.2 end-to-end smoke test.
+
+### Added
 - Smoke-test runner `dev-notes/smoke-tests/trash-roundtrip.php`:
   exercises backup → idempotent re-backup → modify-then-restore →
   re-backup → purge against a synthetic attachment. Run with
