@@ -256,6 +256,235 @@ class Media_Library_Hooks {
 	}
 
 	/**
+	 * Register the "Tidy" meta box on the attachment edit screen.
+	 *
+	 * Hook: `add_meta_boxes_attachment`. Renders a compact panel in the
+	 * sidebar containing the protection toggle and a preview of the last
+	 * five processing-log entries.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @return void
+	 */
+	public function register_meta_box(): void {
+		add_meta_box(
+			'tri_attachment',
+			__( 'Tidy Resize Images', 'tidy-resize-images' ),
+			array( $this, 'render_meta_box' ),
+			'attachment',
+			'side',
+			'default'
+		);
+	}
+
+	/**
+	 * Render the attachment-edit meta box.
+	 *
+	 * Two pieces:
+	 *   - Protection toggle (checkbox; saved by `save_meta_box`).
+	 *   - Up to five most-recent entries from `_tri_processing_log`,
+	 *     formatted human-readably.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param mixed $post WP_Post for the attachment being edited.
+	 *
+	 * @return void
+	 */
+	public function render_meta_box( $post ): void {
+		if ( ! is_a( $post, '\WP_Post' ) ) {
+			return;
+		}
+
+		$is_protected = ! empty( get_post_meta( $post->ID, META_PROTECTED, true ) );
+
+		wp_nonce_field( 'tri_attachment_meta_' . $post->ID, 'tri_attachment_nonce' );
+
+		printf(
+			'<p><label><input type="checkbox" name="tri_protected" value="1"%1$s /> %2$s</label></p>',
+			checked( $is_protected, true, false ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- checked() returns ' checked="checked"' or ''.
+			esc_html__( 'Protected — Tidy will never modify this file.', 'tidy-resize-images' )
+		);
+
+		$log_raw = get_post_meta( $post->ID, META_PROCESSING_LOG, true );
+		$log     = is_array( $log_raw ) ? $log_raw : array();
+
+		printf(
+			'<h4 style="margin-top:1em;">%s</h4>',
+			esc_html__( 'Recent activity', 'tidy-resize-images' )
+		);
+
+		if ( empty( $log ) ) {
+			printf(
+				'<p class="tri-help" style="color:#666;">%s</p>',
+				esc_html__( 'No Tidy activity yet for this attachment.', 'tidy-resize-images' )
+			);
+		} else {
+			echo '<ul class="tri-processing-log" style="margin-top:0;font-size:12px;">';
+
+			foreach ( $log as $entry ) {
+				if ( is_array( $entry ) ) {
+					echo $this->format_log_entry( $entry ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- format_log_entry() returns pre-escaped HTML.
+				}
+			}
+
+			echo '</ul>';
+		}
+	}
+
+	/**
+	 * Save the attachment edit-screen meta-box fields.
+	 *
+	 * Hook: `edit_attachment`. Verifies our nonce + capability before
+	 * mutating the protection meta. Other plugins' fields are unaffected
+	 * by this handler.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param int $attachment_id Attachment post ID.
+	 *
+	 * @return void
+	 */
+	public function save_meta_box( $attachment_id ): void {
+		$attachment_id = (int) $attachment_id;
+
+		if ( $attachment_id <= 0 ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified just below.
+		$nonce = isset( $_POST['tri_attachment_nonce'] )
+			? sanitize_text_field( wp_unslash( $_POST['tri_attachment_nonce'] ) )
+			: '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
+		if ( '' === $nonce || ! wp_verify_nonce( $nonce, 'tri_attachment_meta_' . $attachment_id ) ) {
+			return;
+		}
+
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- verified above.
+		$protected = ! empty( $_POST['tri_protected'] );
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
+		if ( $protected ) {
+			update_post_meta( $attachment_id, META_PROTECTED, '1' );
+		} else {
+			delete_post_meta( $attachment_id, META_PROTECTED );
+		}
+	}
+
+	/**
+	 * Format a single processing-log entry as an `<li>` for the meta box.
+	 *
+	 * Action labels are translated; reasons stay as machine strings to
+	 * keep the surface compact (and because the operator-relevant
+	 * machine reasons — `result_larger_than_source`, `excluded_mime`,
+	 * `gif_animated` — read fine without translation).
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array<string, mixed> $entry Log entry.
+	 *
+	 * @return string Pre-escaped HTML fragment.
+	 */
+	private function format_log_entry( array $entry ): string {
+		$at      = (string) ( $entry['at'] ?? '' );
+		$action  = (string) ( $entry['action'] ?? '' );
+		$reason  = (string) ( $entry['reason'] ?? '' );
+		$source  = (string) ( $entry['source_mime'] ?? '' );
+		$target  = (string) ( $entry['target_mime'] ?? '' );
+		$bytes   = (int) ( $entry['savings_bytes'] ?? 0 );
+		$percent = (float) ( $entry['savings_percent'] ?? 0 );
+
+		$action_label = $action;
+
+		switch ( $action ) {
+			case 'committed':
+				$action_label = __( 'Optimised', 'tidy-resize-images' );
+				break;
+			case 'discarded':
+				$action_label = __( 'Discarded', 'tidy-resize-images' );
+				break;
+			case 'skipped':
+				$action_label = __( 'Skipped', 'tidy-resize-images' );
+				break;
+			case 'errored':
+				$action_label = __( 'Error', 'tidy-resize-images' );
+				break;
+			case 'planned':
+				$action_label = __( 'Planned (dry-run)', 'tidy-resize-images' );
+				break;
+		}
+
+		$detail_parts = array();
+
+		if ( '' !== $source && '' !== $target && $source !== $target ) {
+			$detail_parts[] = sprintf( '%s → %s', $source, $target );
+		} elseif ( '' !== $target ) {
+			$detail_parts[] = $target;
+		}
+
+		if ( $bytes > 0 ) {
+			$detail_parts[] = sprintf(
+				/* translators: 1: human-readable bytes saved, 2: percentage */
+				__( 'saved %1$s (%2$s%%)', 'tidy-resize-images' ),
+				size_format( $bytes ),
+				number_format( $percent, 1 )
+			);
+		} elseif ( '' !== $reason && 'committed' !== $reason ) {
+			$detail_parts[] = $reason;
+		}
+
+		$detail = ! empty( $detail_parts ) ? implode( ', ', $detail_parts ) : '';
+
+		return sprintf(
+			'<li style="margin-bottom:0.6em;border-left:3px solid %1$s;padding-left:6px;">'
+			. '<strong>%2$s</strong>'
+			. '<br /><span style="color:#555;">%3$s</span>'
+			. ( '' !== $detail ? '<br /><span style="color:#666;font-style:italic;">%4$s</span>' : '%4$s' )
+			. '</li>',
+			esc_attr( $this->log_entry_colour( $action ) ),
+			esc_html( $action_label ),
+			esc_html( $at ),
+			esc_html( $detail )
+		);
+	}
+
+	/**
+	 * Pick a left-border colour for a log entry based on its action.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string $action Log entry action.
+	 *
+	 * @return string CSS colour value.
+	 */
+	private function log_entry_colour( string $action ): string {
+		$colour = '#999';
+
+		switch ( $action ) {
+			case 'committed':
+				$colour = '#46b450';
+				break;
+			case 'discarded':
+				$colour = '#dba617';
+				break;
+			case 'errored':
+				$colour = '#d63638';
+				break;
+			case 'planned':
+				$colour = '#2271b1';
+				break;
+		}
+
+		return $colour;
+	}
+
+	/**
 	 * AJAX: toggle the `_tri_protected` meta on an attachment.
 	 *
 	 * Returns the new state plus the freshly-rendered Tidy column HTML so

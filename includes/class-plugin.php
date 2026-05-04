@@ -104,6 +104,8 @@ class Plugin {
 			add_action( 'wp_ajax_tri_set_protected', array( $media_library, 'ajax_set_protected' ) );
 			add_action( 'wp_ajax_tri_optimize_now', array( $media_library, 'ajax_optimize_now' ) );
 			add_action( 'wp_ajax_tri_restore_original', array( $media_library, 'ajax_restore_original' ) );
+			add_action( 'add_meta_boxes_attachment', array( $media_library, 'register_meta_box' ) );
+			add_action( 'edit_attachment', array( $media_library, 'save_meta_box' ) );
 		}
 	}
 
