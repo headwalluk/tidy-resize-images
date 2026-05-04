@@ -51,6 +51,16 @@ class Plugin {
 	private ?Upload_Handler $upload_handler = null;
 
 	/**
+	 * Lazy-loaded media-library hooks collaborator.
+	 *
+	 * Owns the upload.php list-table column and (in M8b) the row actions
+	 * + AJAX endpoints for protect/unprotect/optimize/restore.
+	 *
+	 * @var Media_Library_Hooks|null
+	 */
+	private ?Media_Library_Hooks $media_library_hooks = null;
+
+	/**
 	 * Register all WordPress hooks.
 	 *
 	 * Front-end runs only the textdomain loader. Admin-only collaborators
@@ -73,8 +83,9 @@ class Plugin {
 		add_action( TRI_BULK_CRON_HOOK, __NAMESPACE__ . '\\run_bulk_cron' );
 
 		if ( is_admin() ) {
-			$settings    = $this->get_settings();
-			$admin_hooks = $this->get_admin_hooks();
+			$settings      = $this->get_settings();
+			$admin_hooks   = $this->get_admin_hooks();
+			$media_library = $this->get_media_library_hooks();
 
 			add_action( 'admin_init', array( $settings, 'register' ) );
 			add_action( 'admin_menu', array( $admin_hooks, 'register_menu' ) );
@@ -84,6 +95,9 @@ class Plugin {
 			add_action( 'admin_post_tri_trash_purge', array( $admin_hooks, 'handle_trash_purge' ) );
 			add_action( 'wp_ajax_tri_bulk_count', array( $admin_hooks, 'ajax_bulk_count' ) );
 			add_action( 'wp_ajax_tri_bulk_step', array( $admin_hooks, 'ajax_bulk_step' ) );
+
+			add_filter( 'manage_upload_columns', array( $media_library, 'register_columns' ) );
+			add_action( 'manage_media_custom_column', array( $media_library, 'render_column' ), 10, 2 );
 		}
 	}
 
@@ -145,5 +159,20 @@ class Plugin {
 		}
 
 		return $this->upload_handler;
+	}
+
+	/**
+	 * Get (and lazily instantiate) the Media_Library_Hooks collaborator.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @return Media_Library_Hooks
+	 */
+	public function get_media_library_hooks(): Media_Library_Hooks {
+		if ( is_null( $this->media_library_hooks ) ) {
+			$this->media_library_hooks = new Media_Library_Hooks();
+		}
+
+		return $this->media_library_hooks;
 	}
 }
