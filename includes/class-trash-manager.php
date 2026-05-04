@@ -115,6 +115,10 @@ class Trash_Manager {
 	 *    (which also regenerates intermediate sizes for the original
 	 *    format).
 	 * 6. Clear the `_tri_backup` meta.
+	 * 7. Clear the gating meta (`_tri_processed_at`,
+	 *    `_tri_conversion_skipped`) so the bulk scanner treats the
+	 *    restored attachment as a fresh candidate. The `_tri_processing_log`
+	 *    history is intentionally left in place as a round-trip record.
 	 *
 	 * Caveat: DB content references (post_content, postmeta) are NOT
 	 * rewritten here — that's Search_Replace's job (M6).
@@ -182,6 +186,16 @@ class Trash_Manager {
 					}
 
 					delete_post_meta( $attachment_id, META_BACKUP );
+
+					// Clear the gating meta so the bulk scanner picks the
+					// attachment up again. Restore is an explicit "let's try
+					// this image again" gesture; carrying the previous
+					// processed-at marker would silently keep the attachment
+					// out of subsequent runs even after the file has been
+					// reverted.
+					delete_post_meta( $attachment_id, META_PROCESSED_AT );
+					Skip_Memo::clear( $attachment_id );
+
 					$success = true;
 				}
 			}

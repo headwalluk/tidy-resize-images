@@ -40,6 +40,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Bulk-action versions and the other two row actions ("Optimize
   Now", "Restore Original") are deferred to M8b.
 
+### Fixed
+- `Trash_Manager::restore()` now clears the gating meta
+  (`_tri_processed_at` and `_tri_conversion_skipped`) as part of a
+  successful restore. Previously the bulk scanner's "skip already-
+  processed" SQL filter kept restored attachments out of subsequent
+  runs even after the file had been reverted — so an operator who
+  restored an image to retry under different settings would see no
+  effect on the next bulk pass. The `_tri_processing_log` history
+  is intentionally retained as a round-trip record.
+- New "Restore & protect" button on each Trash row (alongside the
+  existing Restore and Purge). Same restore plumbing, plus sets
+  `_tri_protected=1` on success so the restored attachment is
+  exempt from future runs. Operator intent is now explicit at click
+  time: "give it back to me eligible" (Restore) vs "give it back,
+  hands off" (Restore & protect). New admin-post handler
+  `tri_trash_restore_protect`; reuses the existing per-attachment
+  nonce.
+
 ### Changed
 - Stateless helpers `now_formatted()`, `compute_final_path()`, and
   `delete_intermediate_files()` consolidated into

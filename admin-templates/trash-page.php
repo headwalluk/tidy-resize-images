@@ -42,7 +42,10 @@ if ( '' !== $tri_notice ) {
 
 	switch ( $tri_notice ) {
 		case 'restored':
-			$tri_notice_text = __( 'Original restored.', 'tidy-resize-images' );
+			$tri_notice_text = __( 'Original restored. Tidy will treat this image as a fresh candidate on the next bulk run.', 'tidy-resize-images' );
+			break;
+		case 'restored_protected':
+			$tri_notice_text = __( 'Original restored and marked do-not-touch. Tidy will skip this image on future runs.', 'tidy-resize-images' );
 			break;
 		case 'restore_failed':
 			$tri_notice_text = __( 'Restore failed — see the error log.', 'tidy-resize-images' );
@@ -123,15 +126,19 @@ foreach ( $tri_ids as $tri_id ) {
 
 	$tri_thumb = wp_get_attachment_image( $tri_id, array( 60, 60 ), true );
 
-	$tri_restore_url = wp_nonce_url(
+	$tri_restore_url         = wp_nonce_url(
 		admin_url( 'admin-post.php?action=tri_trash_restore&attachment_id=' . $tri_id ),
 		'tri_trash_action_' . $tri_id
 	);
-	$tri_purge_url   = wp_nonce_url(
+	$tri_restore_protect_url = wp_nonce_url(
+		admin_url( 'admin-post.php?action=tri_trash_restore_protect&attachment_id=' . $tri_id ),
+		'tri_trash_action_' . $tri_id
+	);
+	$tri_purge_url           = wp_nonce_url(
 		admin_url( 'admin-post.php?action=tri_trash_purge&attachment_id=' . $tri_id ),
 		'tri_trash_action_' . $tri_id
 	);
-	$tri_edit_url    = (string) get_edit_post_link( $tri_id );
+	$tri_edit_url            = (string) get_edit_post_link( $tri_id );
 
 	$tri_rows_html .= sprintf(
 		'<tr>'
@@ -141,35 +148,43 @@ foreach ( $tri_ids as $tri_id ) {
 		. '<td><code>%10$s</code><br />%11$d × %12$d<br />%13$s</td>'
 		. '<td>%14$s<br /><span class="tri-help">%15$s</span></td>'
 		. '<td>%16$s</td>'
-		. '<td><a href="%17$s" class="button">%18$s</a> <a href="%19$s" class="button" onclick="return confirm(\'%20$s\');">%21$s</a></td>'
+		. '<td>'
+		. '<a href="%17$s" class="button" title="%18$s">%19$s</a> '
+		. '<a href="%20$s" class="button" title="%21$s">%22$s</a> '
+		. '<a href="%23$s" class="button" onclick="return confirm(\'%24$s\');">%25$s</a>'
+		. '</td>'
 		. '</tr>',
-		$tri_thumb,                                               // 1: pre-escaped by wp_get_attachment_image.
-		esc_url( $tri_edit_url ),                                 // 2.
-		esc_html( get_the_title( $tri_id ) ),                     // 3.
-		(int) $tri_id,                                            // 4.
-		$tri_warning_html,                                        // 5: pre-escaped per-piece.
-		esc_html( $tri_orig_mime ),                               // 6.
-		$tri_orig_w,                                              // 7.
-		$tri_orig_h,                                              // 8.
-		esc_html( size_format( $tri_orig_bytes ) ),               // 9.
-		esc_html( $tri_current_mime ),                            // 10.
-		$tri_current_w,                                           // 11.
-		$tri_current_h,                                           // 12.
-		esc_html( size_format( $tri_current_bytes ) ),            // 13.
-		esc_html( size_format( max( 0, $tri_savings_bytes ) ) ),  // 14.
+		$tri_thumb,                                                                             // 1: pre-escaped.
+		esc_url( $tri_edit_url ),                                                               // 2.
+		esc_html( get_the_title( $tri_id ) ),                                                   // 3.
+		(int) $tri_id,                                                                          // 4.
+		$tri_warning_html,                                                                      // 5: pre-escaped.
+		esc_html( $tri_orig_mime ),                                                             // 6.
+		$tri_orig_w,                                                                            // 7.
+		$tri_orig_h,                                                                            // 8.
+		esc_html( size_format( $tri_orig_bytes ) ),                                             // 9.
+		esc_html( $tri_current_mime ),                                                          // 10.
+		$tri_current_w,                                                                         // 11.
+		$tri_current_h,                                                                         // 12.
+		esc_html( size_format( $tri_current_bytes ) ),                                          // 13.
+		esc_html( size_format( max( 0, $tri_savings_bytes ) ) ),                                // 14.
 		esc_html(
 			sprintf(
 				/* translators: %s: signed percentage like "40.6%" or "-3.2%" */
 				__( '(%s%%)', 'tidy-resize-images' ),
 				number_format( $tri_savings_pct, 1 )
 			)
-		),                                                        // 15.
-		esc_html( $tri_trashed_at ),                              // 16.
-		esc_url( $tri_restore_url ),                              // 17.
-		esc_html__( 'Restore', 'tidy-resize-images' ),            // 18.
-		esc_url( $tri_purge_url ),                                // 19.
-		esc_js( __( 'Permanently delete this backup? Cannot be undone.', 'tidy-resize-images' ) ), // 20.
-		esc_html__( 'Purge', 'tidy-resize-images' )               // 21.
+		),                                                                                      // 15.
+		esc_html( $tri_trashed_at ),                                                            // 16.
+		esc_url( $tri_restore_url ),                                                            // 17.
+		esc_attr__( 'Put the original file back. Tidy will treat this attachment as a fresh candidate on the next bulk run.', 'tidy-resize-images' ), // 18.
+		esc_html__( 'Restore', 'tidy-resize-images' ),                                          // 19.
+		esc_url( $tri_restore_protect_url ),                                                    // 20.
+		esc_attr__( 'Put the original file back AND mark this attachment do-not-touch so Tidy never modifies it again.', 'tidy-resize-images' ), // 21.
+		esc_html__( 'Restore & protect', 'tidy-resize-images' ),                                // 22.
+		esc_url( $tri_purge_url ),                                                              // 23.
+		esc_js( __( 'Permanently delete this backup? Cannot be undone.', 'tidy-resize-images' ) ), // 24.
+		esc_html__( 'Purge', 'tidy-resize-images' )                                             // 25.
 	);
 }
 

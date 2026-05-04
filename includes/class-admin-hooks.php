@@ -162,6 +162,29 @@ class Admin_Hooks {
 	}
 
 	/**
+	 * Handle the `tri_trash_restore_protect` admin-post action.
+	 *
+	 * Same restore plumbing as `handle_trash_restore`, plus sets the
+	 * `_tri_protected` flag so the restored attachment is exempt from
+	 * subsequent bulk runs. Operator intent is "I want this file back AND
+	 * I want Tidy to leave it alone."
+	 *
+	 * @since 0.2.0
+	 *
+	 * @return void
+	 */
+	public function handle_trash_restore_protect(): void {
+		$attachment_id = $this->verify_trash_action_request();
+		$ok            = Trash_Manager::restore( $attachment_id );
+
+		if ( $ok ) {
+			update_post_meta( $attachment_id, META_PROTECTED, '1' );
+		}
+
+		$this->redirect_to_trash_page( $ok ? 'restored_protected' : 'restore_failed' );
+	}
+
+	/**
 	 * Handle the `tri_trash_purge` admin-post action.
 	 *
 	 * @since 0.1.0
