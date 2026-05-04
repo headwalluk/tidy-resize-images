@@ -333,6 +333,114 @@ class Media_Library_Hooks {
 	}
 
 	/**
+	 * Add a "Protected" checkbox to the Media Library grid-mode edit form.
+	 *
+	 * Hook: `attachment_fields_to_edit`. The filter is the only path WP
+	 * offers for surfacing custom fields in the modal that opens from the
+	 * grid view — meta boxes (used by `register_meta_box`) only appear on
+	 * the classic edit screen at `post.php?post=N&action=edit`. Operators
+	 * who never switch the Media Library to list mode reach this surface
+	 * to toggle Tidy protection.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array<string, mixed> $form_fields Existing fields, keyed by
+	 *                                          field slug.
+	 * @param mixed                $post        WP_Post for the attachment.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function add_grid_mode_field( $form_fields, $post ): array {
+		$form_fields = is_array( $form_fields ) ? $form_fields : array();
+
+		if ( ! is_a( $post, '\WP_Post' ) || 'attachment' !== $post->post_type ) {
+			return $form_fields;
+		}
+
+		if ( 0 !== strpos( (string) $post->post_mime_type, 'image/' ) ) {
+			return $form_fields;
+		}
+
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			return $form_fields;
+		}
+
+		$is_protected = ! empty( get_post_meta( $post->ID, META_PROTECTED, true ) );
+
+		$form_fields['tri_protected'] = array(
+			'label' => __( 'Tidy: Protect', 'tidy-resize-images' ),
+			'input' => 'html',
+			'html'  => sprintf(
+				// Hidden marker tells the save handler this form rendered our
+				// field — needed to distinguish "operator unticked the box"
+				// (tri_protected absent on submit) from "the filter fired
+				// without our field rendering" (don't touch meta).
+				'<input type="hidden" name="attachments[%1$d][tri_protected_present]" value="1" />'
+				. '<label><input type="checkbox" name="attachments[%1$d][tri_protected]" id="attachments-%1$d-tri_protected" value="1"%2$s /> %3$s</label>',
+				(int) $post->ID,
+				checked( $is_protected, true, false ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- checked() returns ' checked="checked"' or empty.
+				esc_html__( 'Tidy will never modify this file.', 'tidy-resize-images' )
+			),
+			'helps' => __( 'Marks the attachment as do-not-touch. Bulk runs and the upload handler will skip it.', 'tidy-resize-images' ),
+		);
+
+		return $form_fields;
+	}
+
+	/**
+	 * Persist the grid-mode protection checkbox to attachment meta.
+	 *
+	 * Hook: `attachment_fields_to_save`. WP passes us the existing $post
+	 * (which we return unmodified — we only need the side-effect of
+	 * writing META_PROTECTED) and the form's $attachment payload.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param mixed                $post       Post array (with ID).
+	 * @param array<string, mixed> $attachment Form fields submitted.
+	 *
+	 * @return mixed
+	 */
+	public function save_grid_mode_field( $post, $attachment ): array {
+		$post_arr = is_array( $post ) ? $post : array();
+
+		if ( ! isset( $post_arr['ID'] ) ) {
+			return $post_arr;
+		}
+
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			return $post_arr;
+		}
+
+		// The field only renders for image attachments — but the save
+		// filter fires for every attachment edit, so re-check.
+		$post_object = get_post( (int) $post_arr['ID'] );
+
+		if ( is_null( $post_object ) || 0 !== strpos( (string) $post_object->post_mime_type, 'image/' ) ) {
+			return $post_arr;
+		}
+
+		// HTML convention: an unchecked checkbox submits nothing. So we can't
+		// distinguish "form rendered, operator unticked" from "form did not
+		// render at all" by the checkbox alone. The hidden `tri_protected_present`
+		// marker (added by add_grid_mode_field) flags the former — if it's
+		// absent we bail, treating this as a non-Tidy save context.
+		if ( empty( $attachment['tri_protected_present'] ) ) {
+			return $post_arr;
+		}
+
+		$protected = ! empty( $attachment['tri_protected'] );
+
+		if ( $protected ) {
+			update_post_meta( (int) $post_arr['ID'], META_PROTECTED, '1' );
+		} else {
+			delete_post_meta( (int) $post_arr['ID'], META_PROTECTED );
+		}
+
+		return $post_arr;
+	}
+
+	/**
 	 * Save the attachment edit-screen meta-box fields.
 	 *
 	 * Hook: `edit_attachment`. Verifies our nonce + capability before

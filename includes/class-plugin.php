@@ -106,6 +106,8 @@ class Plugin {
 			add_action( 'wp_ajax_tri_restore_original', array( $media_library, 'ajax_restore_original' ) );
 			add_action( 'add_meta_boxes_attachment', array( $media_library, 'register_meta_box' ) );
 			add_action( 'edit_attachment', array( $media_library, 'save_meta_box' ) );
+			add_filter( 'attachment_fields_to_edit', array( $media_library, 'add_grid_mode_field' ), 10, 2 );
+			add_filter( 'attachment_fields_to_save', array( $media_library, 'save_grid_mode_field' ), 10, 2 );
 		}
 	}
 
