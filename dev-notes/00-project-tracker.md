@@ -1,6 +1,6 @@
 # Project Tracker
 
-**Version:** 0.2.0
+**Version:** 0.3.0
 **Last Updated:** 2026-05-04
 **Current Phase:** Milestone 8 (Media Library UI)
 **Overall Progress:** 78%

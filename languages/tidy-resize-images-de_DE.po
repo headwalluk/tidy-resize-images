@@ -1,8 +1,5 @@
-# Copyright (C) 2026 Paul Faulkner
-# This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Language: de_DE\n"
 "Project-Id-Version: Tidy Resize Images 0.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tidy-resize-images\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
@@ -12,6 +9,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-05-03T18:33:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language: de_DE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tidy-resize-images\n"
 
@@ -152,7 +150,7 @@ msgid "Reason"
 msgstr "Grund"
 
 #: admin-templates/bulk-page.php:128
-#: admin-templates/trash-page.php:191
+#: admin-templates/trash-page.php:206
 msgid "Saved"
 msgstr "Gespeichert"
 
@@ -429,73 +427,69 @@ msgstr "Markierungen für die Memoisation fehlgeschlagener Konvertierungen werde
 msgid "Tidy Images — Trash"
 msgstr "Bilder aufräumen — Papierkorb"
 
-#: admin-templates/trash-page.php:45
-msgid "Original restored."
-msgstr "Im Originalzustand restauriert."
-
-#: admin-templates/trash-page.php:48
+#: admin-templates/trash-page.php:51
 msgid "Restore failed — see the error log."
 msgstr "Die Wiederherstellung ist fehlgeschlagen – siehe Fehlerprotokoll."
 
-#: admin-templates/trash-page.php:52
+#: admin-templates/trash-page.php:55
 msgid "Backup purged."
 msgstr "Sicherung gelöscht."
 
-#: admin-templates/trash-page.php:55
+#: admin-templates/trash-page.php:58
 msgid "Purge failed — see the error log."
 msgstr "Die Bereinigung ist fehlgeschlagen – siehe Fehlerprotokoll."
 
-#: admin-templates/trash-page.php:74
+#: admin-templates/trash-page.php:77
 msgid "No trashed images. Originals will appear here when the bulk processor or upload handler modifies an image (those land in M5/M7)."
 msgstr "Keine gelöschten Bilder. Die Originale werden hier angezeigt, wenn der Massenverarbeitungs- oder Upload-Handler ein Bild bearbeitet (diese landen in M5/M7)."
 
-#: admin-templates/trash-page.php:119
+#: admin-templates/trash-page.php:122
 msgid "Filename changed."
 msgstr "Der Dateiname wurde geändert."
 
-#: admin-templates/trash-page.php:120
+#: admin-templates/trash-page.php:123
 msgid "The processor renamed this file during conversion. Restoring will put the original file back, but page content and metadata may still reference the new filename until the search-replace pass runs (M6)."
 msgstr "Der Prozessor hat diese Datei während der Konvertierung umbenannt. Durch das Wiederherstellen wird die Originaldatei wiederhergestellt, doch der Seiteninhalt und die Metadaten verweisen möglicherweise weiterhin auf den neuen Dateinamen, bis der Such- und Ersetzungsdurchlauf (M6) ausgeführt wird."
 
 #. translators: %s: signed percentage like "40.6%" or "-3.2%"
-#: admin-templates/trash-page.php:163
+#: admin-templates/trash-page.php:174
 #, php-format
 msgid "(%s%%)"
 msgstr "(%s%%)"
 
-#: admin-templates/trash-page.php:169
+#: admin-templates/trash-page.php:181
 msgid "Restore"
 msgstr "Wiederherstellen"
 
-#: admin-templates/trash-page.php:171
+#: admin-templates/trash-page.php:186
 msgid "Permanently delete this backup? Cannot be undone."
 msgstr "Möchten Sie diese Sicherung endgültig löschen? Dieser Vorgang kann nicht rückgängig gemacht werden."
 
-#: admin-templates/trash-page.php:172
+#: admin-templates/trash-page.php:187
 msgid "Purge"
 msgstr "Entlüftung"
 
-#: admin-templates/trash-page.php:187
+#: admin-templates/trash-page.php:202
 msgid "Thumbnail"
 msgstr "Miniaturansicht"
 
-#: admin-templates/trash-page.php:188
+#: admin-templates/trash-page.php:203
 msgid "Attachment"
 msgstr "Anhang"
 
-#: admin-templates/trash-page.php:189
+#: admin-templates/trash-page.php:204
 msgid "Original"
 msgstr "Original"
 
-#: admin-templates/trash-page.php:190
+#: admin-templates/trash-page.php:205
 msgid "Current"
 msgstr "Aktuell"
 
-#: admin-templates/trash-page.php:192
+#: admin-templates/trash-page.php:207
 msgid "Trashed at"
 msgstr "Zerstört bei"
 
-#: admin-templates/trash-page.php:193
+#: admin-templates/trash-page.php:208
 msgid "Actions"
 msgstr "Aktionen"
 
@@ -519,53 +513,55 @@ msgstr "Großmenge"
 msgid "Trash"
 msgstr "Dick"
 
-#: includes/class-admin-hooks.php:191
-#: includes/class-admin-hooks.php:217
+#: includes/class-admin-hooks.php:214
+#: includes/class-admin-hooks.php:240
+#: includes/class-media-library-hooks.php:238
 msgid "Insufficient permissions."
 msgstr "Nicht ausreichende Berechtigungen."
 
-#: includes/class-admin-hooks.php:271
+#: includes/class-admin-hooks.php:294
 msgid "You do not have permission to perform this action."
 msgstr "Sie haben keine Berechtigung, diese Aktion auszuführen."
 
-#: includes/class-admin-hooks.php:277
+#: includes/class-admin-hooks.php:300
+#: includes/class-media-library-hooks.php:246
 msgid "Missing attachment ID."
 msgstr "Anhang-ID fehlt."
 
-#: includes/class-admin-hooks.php:283
+#: includes/class-admin-hooks.php:306
 msgid "Security check failed. Refresh the Trash page and try again."
 msgstr "Die Sicherheitsüberprüfung ist fehlgeschlagen. Aktualisieren Sie die Seite „Papierkorb“ und versuchen Sie es erneut."
 
-#: includes/class-admin-hooks.php:335
+#: includes/class-admin-hooks.php:358
 msgid "Starting…"
 msgstr "Es geht los…"
 
-#: includes/class-admin-hooks.php:336
+#: includes/class-admin-hooks.php:359
 msgid "Processing…"
 msgstr "Wird verarbeitet…"
 
-#: includes/class-admin-hooks.php:337
+#: includes/class-admin-hooks.php:360
 msgid "Done."
 msgstr "Erledigt."
 
-#: includes/class-admin-hooks.php:338
+#: includes/class-admin-hooks.php:361
 msgid "Stopped."
 msgstr "Angehalten."
 
-#: includes/class-admin-hooks.php:339
+#: includes/class-admin-hooks.php:362
 msgid "Error."
 msgstr "Fehler."
 
-#: includes/class-admin-hooks.php:340
+#: includes/class-admin-hooks.php:363
 msgid "No attachments need processing."
 msgstr "Es müssen keine Anhänge bearbeitet werden."
 
-#: includes/class-admin-hooks.php:341
+#: includes/class-admin-hooks.php:364
 msgid "Run a LIVE bulk processing pass? Originals will be backed up to Trash unless you have disabled backups in Settings → Behaviour."
 msgstr "Möchten Sie einen LIVE-Massenverarbeitungsdurchlauf durchführen? Die Originaldateien werden im Papierkorb gesichert, es sei denn, Sie haben die Sicherung unter „Einstellungen → Verhalten“ deaktiviert."
 
 #. translators: %d: attachment ID
-#: includes/class-bulk-processor.php:397
+#: includes/class-bulk-processor.php:220
 #, php-format
 msgid "Attachment %d"
 msgstr "Anhang %d"
@@ -597,3 +593,70 @@ msgstr "Die Größenänderung ist fehlgeschlagen."
 #: includes/class-image-processor.php:474
 msgid "Encode failed."
 msgstr "Die Kodierung ist fehlgeschlagen."
+
+#: admin-templates/trash-page.php:45
+msgid "Original restored. Tidy will treat this image as a fresh candidate on the next bulk run."
+msgstr "Original wiederhergestellt. Tidy wird dieses Bild beim nächsten Massenlauf als neuen Kandidaten behandeln."
+
+#: admin-templates/trash-page.php:48
+msgid "Original restored and marked do-not-touch. Tidy will skip this image on future runs."
+msgstr "Original restauriert und mit „Bitte nicht berühren“ gekennzeichnet. Tidy wird dieses Bild bei zukünftigen Durchläufen überspringen."
+
+#: admin-templates/trash-page.php:180
+msgid "Put the original file back. Tidy will treat this attachment as a fresh candidate on the next bulk run."
+msgstr "Legen Sie die Originaldatei wieder ab. Tidy behandelt diesen Anhang beim nächsten Massenlauf als neuen Kandidaten."
+
+#: admin-templates/trash-page.php:183
+msgid "Put the original file back AND mark this attachment do-not-touch so Tidy never modifies it again."
+msgstr "Legen Sie die Originaldatei wieder zurück UND kennzeichnen Sie diesen Anhang als „nicht ändern“, damit Tidy ihn nie wieder verändert."
+
+#: admin-templates/trash-page.php:184
+msgid "Restore & protect"
+msgstr "Wiederherstellen & schützen"
+
+#: includes/class-media-library-hooks.php:53
+#: includes/class-media-library-hooks.php:61
+msgid "Tidy"
+msgstr "Sauber"
+
+#: includes/class-media-library-hooks.php:130
+msgid "Protected — Tidy will never modify this file."
+msgstr "Geschützt – Tidy wird diese Datei niemals ändern."
+
+#. translators: %s: human-readable timestamp like "2026-05-04 18:32:11 BST"
+#: includes/class-media-library-hooks.php:140
+#, php-format
+msgid "Processed by Tidy on %s."
+msgstr "Verarbeitet von Tidy am %s."
+
+#: includes/class-media-library-hooks.php:147
+msgid "Original is in the Tidy trash and can be restored."
+msgstr "Das Original befindet sich im Papierkorb von Tidy und kann wiederhergestellt werden."
+
+#. translators: 1: target MIME e.g. image/webp, 2: machine reason
+#: includes/class-media-library-hooks.php:160
+#, php-format
+msgid "Tidy tried to convert this to %1$s but the result was no smaller (%2$s). It will be skipped on future runs unless settings change."
+msgstr "Tidy hat versucht, dies in %1$s umzuwandeln, aber das Ergebnis war nicht kürzer (%2$s). Es wird bei zukünftigen Durchläufen übersprungen, sofern sich die Einstellungen nicht ändern."
+
+#: includes/class-media-library-hooks.php:165
+msgid "Tidy will skip this attachment on future runs (a previous attempt produced no benefit)."
+msgstr "Tidy wird diesen Anhang bei zukünftigen Durchläufen überspringen (ein früherer Versuch hat keinen Nutzen gebracht)."
+
+#: includes/class-media-library-hooks.php:211
+#: includes/class-media-library-hooks.php:268
+msgid "Unprotect"
+msgstr "Schutz aufheben"
+
+#: includes/class-media-library-hooks.php:212
+#: includes/class-media-library-hooks.php:269
+msgid "Protect"
+msgstr "Schützen"
+
+#: includes/class-media-library-hooks.php:252
+msgid "Attachment not found."
+msgstr "Anhang nicht gefunden."
+
+#: includes/class-media-library-hooks.php:316
+msgid "Tidy could not update protection state. Please refresh the page and try again."
+msgstr "Tidy konnte den Schutzstatus nicht aktualisieren. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut."
