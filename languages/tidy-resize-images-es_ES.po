@@ -1,0 +1,599 @@
+# Copyright (C) 2026 Paul Faulkner
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Language: es_ES\n"
+"Project-Id-Version: Tidy Resize Images 0.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tidy-resize-images\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-05-03T18:33:28+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: tidy-resize-images\n"
+
+#. Plugin Name of the plugin
+#: tidy-resize-images.php
+#: includes/class-admin-hooks.php:73
+msgid "Tidy Resize Images"
+msgstr "Ajustar el tamaño de las imágenes"
+
+#. Plugin URI of the plugin
+#: tidy-resize-images.php
+msgid "https://github.com/headwalluk/tidy-resize-images"
+msgstr "https://github.com/headwalluk/tidy-resize-images"
+
+#. Description of the plugin
+#: tidy-resize-images.php
+msgid "Keep the WordPress Media Library lean. Resize oversized uploads, convert unsuitable formats, and recompress bloated files — with originals safely backed up to a Trash directory, dry-run preview, and full WP-CLI control."
+msgstr "Mantén la biblioteca multimedia de WordPress optimizada. Redimensiona los archivos subidos que sean demasiado grandes, convierte los formatos inadecuados y vuelve a comprimir los archivos que ocupen demasiado espacio, todo ello con una copia de seguridad de los originales en un directorio de Papelera, una vista previa de prueba y un control total mediante WP-CLI."
+
+#. Author of the plugin
+#: tidy-resize-images.php
+msgid "Paul Faulkner"
+msgstr "Paul Faulkner"
+
+#. Author URI of the plugin
+#: tidy-resize-images.php
+msgid "https://headwall-hosting.com/"
+msgstr "https://headwall-hosting.com/"
+
+#: admin-templates/bulk-page.php:24
+#: admin-templates/trash-page.php:19
+msgid "You do not have permission to view this page."
+msgstr "No tienes permiso para ver esta página."
+
+#: admin-templates/bulk-page.php:37
+#: includes/class-admin-hooks.php:96
+msgid "Tidy Images — Bulk"
+msgstr "Organizar imágenes — En bloque"
+
+#: admin-templates/bulk-page.php:42
+msgid "Process existing attachments in your Media Library. The runner scans for image attachments that are not protected and have not previously been touched by this plugin, then resizes / converts / recompresses them according to your Settings."
+msgstr "Procesa los archivos adjuntos existentes en tu biblioteca multimedia. El programa busca archivos adjuntos de imagen que no estén protegidos y que este complemento no haya procesado anteriormente, y luego cambia su tamaño, los convierte o los vuelve a comprimir según tu configuración."
+
+#: admin-templates/bulk-page.php:49
+msgid "Before running:"
+msgstr "Antes de correr:"
+
+#: admin-templates/bulk-page.php:50
+msgid "mark logos and brand artwork as \"do not touch\" (Media Library row action — landing in M8). Auto mode applies the same compression rules to every attachment regardless of visual sensitivity. Always run a dry-run first to preview decisions."
+msgstr "Marca los logotipos y los elementos gráficos de marca como «no tocar» (acción de fila de la biblioteca multimedia — se abre en M8). El modo automático aplica las mismas reglas de compresión a todos los archivos adjuntos, independientemente de su sensibilidad visual. Realiza siempre primero una prueba para previsualizar los resultados."
+
+#: admin-templates/bulk-page.php:61
+msgid "Candidates ready to process:"
+msgstr "Candidatos listos para ser tramitados:"
+
+#: admin-templates/bulk-page.php:63
+msgid "Excludes attachments marked \"do not touch\" and those previously processed by this plugin."
+msgstr "Se excluyen los archivos adjuntos marcados como «no tocar» y aquellos que ya hayan sido procesados por este complemento."
+
+#: admin-templates/bulk-page.php:64
+msgid "Dry-run setting:"
+msgstr "Configuración de prueba:"
+
+#: admin-templates/bulk-page.php:65
+msgid "on (use \"Run dry\" only)"
+msgstr "activado (utilizar solo «Funcionamiento en seco»)"
+
+#: admin-templates/bulk-page.php:65
+msgid "off"
+msgstr "apagado"
+
+#: admin-templates/bulk-page.php:66
+msgid "Backup originals:"
+msgstr "Copias de seguridad originales:"
+
+#: admin-templates/bulk-page.php:67
+msgid "enabled"
+msgstr "activado"
+
+#: admin-templates/bulk-page.php:67
+msgid "disabled — modifications will be irreversible"
+msgstr "desactivado — los cambios serán irreversibles"
+
+#: admin-templates/bulk-page.php:79
+msgid "Run dry (preview)"
+msgstr "Reproducir sin sonido (vista previa)"
+
+#: admin-templates/bulk-page.php:80
+msgid "Run live (modify files)"
+msgstr "Ejecutar en tiempo real (modificar archivos)"
+
+#: admin-templates/bulk-page.php:81
+msgid "Stop"
+msgstr "Alto"
+
+#: admin-templates/bulk-page.php:101
+msgid "Idle. Press a Run button to begin."
+msgstr "En espera. Pulsa un botón de ejecución para comenzar."
+
+#: admin-templates/bulk-page.php:102
+msgid "Examined"
+msgstr "Examinado"
+
+#: admin-templates/bulk-page.php:103
+msgid "Changed"
+msgstr "Modificado"
+
+#: admin-templates/bulk-page.php:104
+msgid "Skipped (planned / discarded / memo)"
+msgstr "Omitido (planificado / descartado / nota)"
+
+#: admin-templates/bulk-page.php:105
+msgid "Errored"
+msgstr "Se ha producido un error"
+
+#: admin-templates/bulk-page.php:106
+msgid "Bytes saved"
+msgstr "Bytes ahorrados"
+
+#: admin-templates/bulk-page.php:123
+msgid "Log"
+msgstr "Registro"
+
+#: admin-templates/bulk-page.php:124
+msgid "ID"
+msgstr "Número de identificación"
+
+#: admin-templates/bulk-page.php:125
+msgid "Title"
+msgstr "Título"
+
+#: admin-templates/bulk-page.php:126
+msgid "Action"
+msgstr "Acción"
+
+#: admin-templates/bulk-page.php:127
+msgid "Reason"
+msgstr "Motivo"
+
+#: admin-templates/bulk-page.php:128
+#: admin-templates/trash-page.php:191
+msgid "Saved"
+msgstr "Guardado"
+
+#: admin-templates/conflict-notice.php:26
+msgid "Tidy Resize Images:"
+msgstr "Redimensionar imágenes de forma ordenada:"
+
+#: admin-templates/conflict-notice.php:27
+msgid "detected the following image-optimization plugins active alongside this one. Running multiple image processors can cause unexpected behaviour. We will not deactivate them — your call."
+msgstr "Se han detectado los siguientes complementos de optimización de imágenes activos junto con este. El uso simultáneo de varios procesadores de imágenes puede provocar un comportamiento inesperado. No los desactivaremos; la decisión es tuya."
+
+#: admin-templates/conflict-notice.php:29
+msgid "Visit Plugins to deactivate any that you no longer need."
+msgstr "Ve a la sección «Plugins» para desactivar los que ya no necesites."
+
+#: admin-templates/settings-page.php:24
+#: admin-templates/settings-tabs/limits.php:25
+msgid "Limits"
+msgstr "Límites"
+
+#: admin-templates/settings-page.php:25
+#: admin-templates/settings-tabs/format.php:96
+msgid "Format"
+msgstr "Formato"
+
+#: admin-templates/settings-page.php:26
+#: admin-templates/settings-tabs/behaviour.php:54
+msgid "Behaviour"
+msgstr "Comportamiento"
+
+#: admin-templates/settings-page.php:27
+#: admin-templates/settings-tabs/status.php:78
+msgid "Status"
+msgstr "Estado"
+
+#: admin-templates/settings-page.php:62
+msgid "This tab is being built — content lands in a subsequent milestone."
+msgstr "Esta pestaña está en desarrollo; el contenido se incluirá en una fase posterior."
+
+#: admin-templates/settings-page.php:86
+msgid "Save Changes"
+msgstr "Guardar cambios"
+
+#: admin-templates/settings-tabs/behaviour.php:55
+msgid "Operational toggles that apply to every processing path (upload-time, bulk, WP-CLI)."
+msgstr "Opciones de configuración que se aplican a todas las vías de procesamiento (en el momento de la subida, en masa, WP-CLI)."
+
+#: admin-templates/settings-tabs/behaviour.php:63
+msgid "Dry-run mode"
+msgstr "Modo de prueba"
+
+#: admin-templates/settings-tabs/behaviour.php:66
+msgid "Plan but do not modify anything"
+msgstr "Planifica, pero no modifiques nada"
+
+#: admin-templates/settings-tabs/behaviour.php:67
+msgid "When enabled, every code path produces a report of what it would do without writing files or updating the database. Useful for previewing a bulk run before committing."
+msgstr "Cuando está activada, cada ruta de código genera un informe de lo que haría sin escribir archivos ni actualizar la base de datos. Resulta útil para obtener una vista previa de una ejecución masiva antes de confirmarla."
+
+#: admin-templates/settings-tabs/behaviour.php:73
+msgid "Strip EXIF metadata"
+msgstr "Eliminar los metadatos EXIF"
+
+#: admin-templates/settings-tabs/behaviour.php:76
+msgid "Remove EXIF / XMP / IPTC on encode"
+msgstr "Eliminar EXIF / XMP / IPTC al codificar"
+
+#: admin-templates/settings-tabs/behaviour.php:77
+msgid "Drops camera metadata (timestamps, GPS, device info) and authoring metadata from re-encoded images. Recommended for public sites — modest size savings and removes accidental information disclosure."
+msgstr "Elimina los metadatos de la cámara (marcas de tiempo, GPS, información del dispositivo) y los metadatos de creación de las imágenes recodificadas. Recomendado para sitios web públicos: supone un ahorro de tamaño moderado y evita la divulgación accidental de información."
+
+#: admin-templates/settings-tabs/behaviour.php:83
+msgid "Backup originals to Trash"
+msgstr "Mover los originales a la Papelera"
+
+#: admin-templates/settings-tabs/behaviour.php:86
+msgid "Keep a restorable copy of every modified original"
+msgstr "Guarda una copia recuperable de cada original modificado"
+
+#: admin-templates/settings-tabs/behaviour.php:87
+msgid "Originals are moved to wp-content/uploads/tri-trash/ and can be restored from the Trash admin page or via WP-CLI. Highly recommended — disabling this means modifications are irreversible."
+msgstr "Los archivos originales se mueven a wp-content/uploads/tri-trash/ y se pueden recuperar desde la página de administración de la Papelera o mediante WP-CLI. Muy recomendable: si se desactiva esta opción, los cambios serán irreversibles."
+
+#: admin-templates/settings-tabs/behaviour.php:94
+msgid "Trash retention"
+msgstr "Retención de residuos"
+
+#: admin-templates/settings-tabs/behaviour.php:98
+msgid "days"
+msgstr "días"
+
+#: admin-templates/settings-tabs/behaviour.php:99
+msgid "Trashed originals are auto-purged after this many days. Set to 0 to disable auto-purge (purge manually only). The cron auto-purge lands in M10."
+msgstr "Los originales eliminados se borran automáticamente transcurridos este número de días. Establece el valor en 0 para desactivar el borrado automático (solo borrado manual). El borrado automático programado se implementará en M10."
+
+#: admin-templates/settings-tabs/behaviour.php:119
+msgid "Always skip these MIME types"
+msgstr "Omite siempre estos tipos MIME"
+
+#: admin-templates/settings-tabs/behaviour.php:121
+msgid "The image processor will refuse to touch sources of these MIME types regardless of other settings. Defaults: SVG and GIF (vector and animated formats are out of v1 scope)."
+msgstr "El procesador de imágenes rechazará los archivos de estos tipos MIME, independientemente de la configuración restante. Valores predeterminados: SVG y GIF (los formatos vectoriales y animados quedan fuera del ámbito de la versión 1)."
+
+#: admin-templates/settings-tabs/behaviour.php:131
+msgid "rewrite raw + JSON-escaped URLs in post body content"
+msgstr "Reescribir las URL sin formato y con codificación JSON en el cuerpo de la solicitud"
+
+#: admin-templates/settings-tabs/behaviour.php:134
+msgid "rewrite serialised + JSON meta values (Elementor, ACF, etc.)"
+msgstr "Reescribir valores meta serializados y en formato JSON (Elementor, ACF, etc.)"
+
+#: admin-templates/settings-tabs/behaviour.php:140
+msgid "Search-replace scope"
+msgstr "Ámbito de búsqueda y sustitución"
+
+#: admin-templates/settings-tabs/behaviour.php:142
+msgid "When the processor renames a file (e.g. PNG → WebP), references in these tables are rewritten. Disable a scope only if you know references will be updated by another mechanism. wp_options and multisite tables are out of v1 scope."
+msgstr "Cuando el procesador cambia el nombre de un archivo (por ejemplo, de PNG a WebP), se reescriben las referencias de estas tablas. Desactiva un ámbito solo si sabes que las referencias se actualizarán mediante otro mecanismo. Las tablas wp_options y multisite quedan fuera del ámbito de la versión 1."
+
+#: admin-templates/settings-tabs/format.php:75
+msgid "not supported on this server"
+msgstr "No es compatible con este servidor"
+
+#: admin-templates/settings-tabs/format.php:97
+msgid "Choose the target format for converted and recompressed images. Simple/Auto mode is the only mode in v1 — Expert mode (a from→to mapping matrix) is planned."
+msgstr "Elige el formato de destino para las imágenes convertidas y recomprimidas. El modo «Simple/Auto» es el único disponible en la versión 1; está previsto incluir el modo «Experto» (una matriz de correspondencias de origen a destino)."
+
+#: admin-templates/settings-tabs/format.php:115
+msgid "Lossy target format"
+msgstr "Formato de destino con pérdida"
+
+#: admin-templates/settings-tabs/format.php:117
+msgid "Used when converting PNG-without-alpha, HEIC, and static GIF. JPEG and WebP sources are always recompressed in place."
+msgstr "Se utiliza al convertir archivos PNG sin canal alfa, HEIC y GIF estáticos. Los archivos JPEG y WebP siempre se vuelven a comprimir in situ."
+
+#: admin-templates/settings-tabs/format.php:124
+msgid "Lossy quality"
+msgstr "Calidad con pérdida"
+
+#: admin-templates/settings-tabs/format.php:128
+msgid "Encoder quality 1–100. Lower = smaller file, more visible artefacts."
+msgstr "Calidad del codificador: 1-100. Cuanto menor sea el valor, más pequeño será el archivo y más visibles serán los artefactos."
+
+#: admin-templates/settings-tabs/format.php:144
+msgid "Alpha-preserving target format"
+msgstr "Formato de destino que conserva las mayúsculas"
+
+#: admin-templates/settings-tabs/format.php:146
+msgid "Used when the source has a meaningful alpha channel (PNG, AVIF, HEIC). Selecting \"PNG (keep)\" leaves alpha sources untouched."
+msgstr "Se utiliza cuando la fuente tiene un canal alfa válido (PNG, AVIF, HEIC). Al seleccionar «PNG (mantener)», las fuentes alfa no se modifican."
+
+#: admin-templates/settings-tabs/format.php:153
+msgid "Alpha-preserving quality"
+msgstr "Calidad con preservación de alfa"
+
+#: admin-templates/settings-tabs/format.php:157
+msgid "Encoder quality 1–100. Higher than lossy quality is recommended — alpha-bearing images are usually graphics where artefacts are more visible."
+msgstr "Calidad del codificador: 1-100. Se recomienda una calidad superior a la «con pérdida»; las imágenes con canal alfa suelen ser gráficos en los que los artefactos son más visibles."
+
+#: admin-templates/settings-tabs/format.php:164
+msgid "JPEG recompression quality"
+msgstr "Calidad de la recompresión JPEG"
+
+#: admin-templates/settings-tabs/format.php:168
+msgid "Quality used when recompressing JPEG sources in place (no format change)."
+msgstr "Calidad utilizada al recomprimir archivos JPEG sin modificarlos (sin cambio de formato)."
+
+#: admin-templates/settings-tabs/format.php:176
+msgid "Expert mode"
+msgstr "Modo experto"
+
+#: admin-templates/settings-tabs/format.php:177
+msgid "Coming soon."
+msgstr "Próximamente."
+
+#: admin-templates/settings-tabs/format.php:178
+msgid "Expert mode will replace the Simple/Auto decision tree with a from→to mapping matrix, so you can configure per-source-MIME outcomes (e.g. \"JPEG → AVIF for sources over 2 MB, otherwise recompress JPEG in place\"). Simple/Auto mode covers most use cases; Expert mode is for power users who want full control."
+msgstr "El modo Experto sustituirá el árbol de decisión de los modos Simple/Automático por una matriz de correspondencias «de»→«a», lo que te permitirá configurar los resultados según el tipo MIME de cada fuente (por ejemplo, «JPEG → AVIF para fuentes de más de 2 MB; en los demás casos, recomprimir el JPEG in situ»). El modo Simple/Automático cubre la mayoría de los casos de uso; el modo Experto está pensado para usuarios avanzados que desean un control total."
+
+#: admin-templates/settings-tabs/limits.php:26
+msgid "Set the dimensional and file-size thresholds at which images become candidates for processing. These thresholds drive the bulk scanner — they are not enforced as caps on otherwise-good images."
+msgstr "Establece los umbrales de dimensiones y tamaño de archivo a partir de los cuales las imágenes pasan a ser candidatas para su procesamiento. Estos umbrales determinan el funcionamiento del escáner masivo; no se aplican como límites para imágenes que, por lo demás, son adecuadas."
+
+#: admin-templates/settings-tabs/limits.php:35
+msgid "Max longest edge"
+msgstr "El borde más largo"
+
+#: admin-templates/settings-tabs/limits.php:39
+msgid "pixels"
+msgstr "píxeles"
+
+#. translators: 1: min, 2: max
+#: admin-templates/settings-tabs/limits.php:43
+#, php-format
+msgid "Images whose longest side exceeds this value are proportionally resized. Range: %1$d – %2$d px."
+msgstr "Las imágenes cuyo lado más largo supere este valor se redimensionarán proporcionalmente. Rango: %1$d – %2$d píxeles."
+
+#: admin-templates/settings-tabs/limits.php:55
+msgid "Max file size"
+msgstr "Tamaño máximo del archivo"
+
+#: admin-templates/settings-tabs/limits.php:59
+msgid "bytes"
+msgstr "bytes"
+
+#. translators: 1: human-readable current value, 2: human-readable min, 3: human-readable max
+#: admin-templates/settings-tabs/limits.php:63
+#, php-format
+msgid "Images larger than this become candidates for re-encoding. Current value: %1$s. Range: %2$s – %3$s."
+msgstr "Las imágenes que superen este tamaño se considerarán candidatas a ser recodificadas. Valor actual: %1$s. Rango: %2$s – %3$s."
+
+#: admin-templates/settings-tabs/status.php:79
+msgid "Read-only summary of capabilities, counts, and runtime debug values."
+msgstr "Resumen de solo lectura de capacidades, recuentos y valores de depuración en tiempo de ejecución."
+
+#: admin-templates/settings-tabs/status.php:85
+msgid "No processing has run on this site yet. Counts below will populate once the upload handler (M5) or bulk processor (M7) start touching attachments."
+msgstr "Aún no se ha ejecutado ningún proceso en este sitio. Las cifras que aparecen a continuación se actualizarán en cuanto el gestor de subidas (M5) o el procesador masivo (M7) empiecen a procesar los archivos adjuntos."
+
+#: admin-templates/settings-tabs/status.php:92
+msgid "Backends"
+msgstr "Servidores"
+
+#: admin-templates/settings-tabs/status.php:120
+msgid "MIME type"
+msgstr "Tipo MIME"
+
+#: admin-templates/settings-tabs/status.php:121
+msgid "GD"
+msgstr "Buenos días"
+
+#: admin-templates/settings-tabs/status.php:122
+msgid "Imagick"
+msgstr "Imagick"
+
+#: admin-templates/settings-tabs/status.php:130
+msgid "Counts"
+msgstr "Recuento"
+
+#: admin-templates/settings-tabs/status.php:139
+msgid "Total attachments"
+msgstr "Total de archivos adjuntos"
+
+#: admin-templates/settings-tabs/status.php:141
+msgid "Processed by Tidy Images"
+msgstr "Procesado por Tidy Images"
+
+#: admin-templates/settings-tabs/status.php:143
+msgid "Protected (do not touch)"
+msgstr "Protegido (no tocar)"
+
+#: admin-templates/settings-tabs/status.php:145
+msgid "Has trash backup"
+msgstr "Tiene un atasco en el desagüe"
+
+#: admin-templates/settings-tabs/status.php:147
+msgid "Conversion skipped (result-larger memo)"
+msgstr "Conversión omitida (memo de mayor tamaño)"
+
+#: admin-templates/settings-tabs/status.php:161
+msgid "Debug"
+msgstr "Depuración"
+
+#: admin-templates/settings-tabs/status.php:162
+msgid "Settings hash:"
+msgstr "Hash de configuración:"
+
+#: admin-templates/settings-tabs/status.php:164
+msgid "Failed-conversion memoisation markers are invalidated automatically when this hash changes. Useful for confirming that a settings change has actually altered the encoding-affecting subset of options."
+msgstr "Los marcadores de memorización de conversiones fallidas se invalidan automáticamente cuando cambia este hash. Resulta útil para confirmar que un cambio en la configuración ha modificado efectivamente el subconjunto de opciones que afecta a la codificación."
+
+#: admin-templates/trash-page.php:32
+#: includes/class-admin-hooks.php:105
+msgid "Tidy Images — Trash"
+msgstr "Imágenes ordenadas — Papelera"
+
+#: admin-templates/trash-page.php:45
+msgid "Original restored."
+msgstr "Original restaurado."
+
+#: admin-templates/trash-page.php:48
+msgid "Restore failed — see the error log."
+msgstr "La restauración ha fallado; consulta el registro de errores."
+
+#: admin-templates/trash-page.php:52
+msgid "Backup purged."
+msgstr "Se ha eliminado la copia de seguridad."
+
+#: admin-templates/trash-page.php:55
+msgid "Purge failed — see the error log."
+msgstr "La purga ha fallado; consulta el registro de errores."
+
+#: admin-templates/trash-page.php:74
+msgid "No trashed images. Originals will appear here when the bulk processor or upload handler modifies an image (those land in M5/M7)."
+msgstr "No hay imágenes eliminadas. Los originales aparecerán aquí cuando el procesador masivo o el gestor de subidas modifique una imagen (estas se guardan en M5/M7)."
+
+#: admin-templates/trash-page.php:119
+msgid "Filename changed."
+msgstr "Se ha cambiado el nombre del archivo."
+
+#: admin-templates/trash-page.php:120
+msgid "The processor renamed this file during conversion. Restoring will put the original file back, but page content and metadata may still reference the new filename until the search-replace pass runs (M6)."
+msgstr "El procesador ha cambiado el nombre de este archivo durante la conversión. Al restaurarlo, se recuperará el archivo original, pero es posible que el contenido de la página y los metadatos sigan haciendo referencia al nuevo nombre de archivo hasta que se ejecute la operación de búsqueda y sustitución (M6)."
+
+#. translators: %s: signed percentage like "40.6%" or "-3.2%"
+#: admin-templates/trash-page.php:163
+#, php-format
+msgid "(%s%%)"
+msgstr "(%s%%)"
+
+#: admin-templates/trash-page.php:169
+msgid "Restore"
+msgstr "Restaurar"
+
+#: admin-templates/trash-page.php:171
+msgid "Permanently delete this backup? Cannot be undone."
+msgstr "¿Desea eliminar definitivamente esta copia de seguridad? Esta acción no se puede deshacer."
+
+#: admin-templates/trash-page.php:172
+msgid "Purge"
+msgstr "Purga"
+
+#: admin-templates/trash-page.php:187
+msgid "Thumbnail"
+msgstr "Miniatura"
+
+#: admin-templates/trash-page.php:188
+msgid "Attachment"
+msgstr "Anexo"
+
+#: admin-templates/trash-page.php:189
+msgid "Original"
+msgstr "Original"
+
+#: admin-templates/trash-page.php:190
+msgid "Current"
+msgstr "Actual"
+
+#: admin-templates/trash-page.php:192
+msgid "Trashed at"
+msgstr "Destrozado en"
+
+#: admin-templates/trash-page.php:193
+msgid "Actions"
+msgstr "Acciones"
+
+#: includes/class-admin-hooks.php:74
+msgid "Tidy Images"
+msgstr "Imágenes ordenadas"
+
+#: includes/class-admin-hooks.php:87
+msgid "Tidy Resize Images — Settings"
+msgstr "Tidy: Cambiar el tamaño de las imágenes — Configuración"
+
+#: includes/class-admin-hooks.php:88
+msgid "Settings"
+msgstr "Configuración"
+
+#: includes/class-admin-hooks.php:97
+msgid "Bulk"
+msgstr "A granel"
+
+#: includes/class-admin-hooks.php:106
+msgid "Trash"
+msgstr "Grueso"
+
+#: includes/class-admin-hooks.php:191
+#: includes/class-admin-hooks.php:217
+msgid "Insufficient permissions."
+msgstr "Permisos insuficientes."
+
+#: includes/class-admin-hooks.php:271
+msgid "You do not have permission to perform this action."
+msgstr "No tienes permiso para realizar esta acción."
+
+#: includes/class-admin-hooks.php:277
+msgid "Missing attachment ID."
+msgstr "Falta el ID del archivo adjunto."
+
+#: includes/class-admin-hooks.php:283
+msgid "Security check failed. Refresh the Trash page and try again."
+msgstr "El control de seguridad ha fallado. Actualiza la página «Papelera» e inténtalo de nuevo."
+
+#: includes/class-admin-hooks.php:335
+msgid "Starting…"
+msgstr "Empezando…"
+
+#: includes/class-admin-hooks.php:336
+msgid "Processing…"
+msgstr "Procesando…"
+
+#: includes/class-admin-hooks.php:337
+msgid "Done."
+msgstr "Listo."
+
+#: includes/class-admin-hooks.php:338
+msgid "Stopped."
+msgstr "Se detuvo."
+
+#: includes/class-admin-hooks.php:339
+msgid "Error."
+msgstr "Error."
+
+#: includes/class-admin-hooks.php:340
+msgid "No attachments need processing."
+msgstr "No hay archivos adjuntos que deban procesarse."
+
+#: includes/class-admin-hooks.php:341
+msgid "Run a LIVE bulk processing pass? Originals will be backed up to Trash unless you have disabled backups in Settings → Behaviour."
+msgstr "¿Quieres ejecutar una ronda de procesamiento masivo EN VIVO? Los archivos originales se guardarán en la Papelera, a menos que hayas desactivado las copias de seguridad en Ajustes → Comportamiento."
+
+#. translators: %d: attachment ID
+#: includes/class-bulk-processor.php:397
+#, php-format
+msgid "Attachment %d"
+msgstr "Archivo adjunto %d"
+
+#. translators: %s: file path
+#: includes/class-image-library.php:137
+#, php-format
+msgid "Source image is not readable: %s"
+msgstr "La imagen original no se puede leer: %s"
+
+#. translators: %s: file path
+#: includes/class-image-library.php:150
+#, php-format
+msgid "File is not a recognised image: %s"
+msgstr "El archivo no es un tipo de imagen reconocido: %s"
+
+#: includes/class-image-library.php:257
+msgid "Image editor returned no path."
+msgstr "El editor de imágenes no ha devuelto ninguna ruta."
+
+#: includes/class-image-library.php:266
+msgid "Encoded successfully but EXIF strip failed."
+msgstr "Se ha codificado correctamente, pero no se ha podido extraer la información EXIF."
+
+#: includes/class-image-processor.php:462
+msgid "Resize failed."
+msgstr "No se ha podido cambiar el tamaño."
+
+#: includes/class-image-processor.php:474
+msgid "Encode failed."
+msgstr "Error al codificar."
