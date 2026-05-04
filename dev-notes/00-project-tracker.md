@@ -1,9 +1,9 @@
 # Project Tracker
 
 **Version:** 0.2.0
-**Last Updated:** 2026-05-03
+**Last Updated:** 2026-05-04
 **Current Phase:** Milestone 8 (Media Library UI)
-**Overall Progress:** 70%
+**Overall Progress:** 78%
 
 ---
 
@@ -23,20 +23,24 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### Up next (Milestone 8 — Media Library UI)
+### M8a (this evening) — done ✅
 
-Surface protection, status, and on-demand processing in the standard
-Media Library list and edit screens. Also where the shared
-`Attachment_Processor` extraction (M7 deferral) lands so all three
-callers (Upload_Handler, Bulk_Processor, "Optimize Now" row action)
-share one commit pipeline.
+Foundation work plus the cheapest user-visible wins. Refactor-driven so
+later M8 features build on a clean base.
 
-- [ ] Extract shared `Attachment_Processor::process( $attachment_id, $dry_run )` from the duplicated logic in Upload_Handler::commit_mutation and Bulk_Processor::commit_one
-- [ ] Media Library list-table column: "Tidy" — icons for protected / processed / has-backup / conversion-skipped
-- [ ] Row actions: Protect, Unprotect, Optimize Now, Restore Original (when backup exists)
-- [ ] Bulk actions: Protect, Unprotect, Optimize, Restore
-- [ ] Attachment edit screen meta box: protected toggle + processing log preview
-- [ ] AJAX endpoints for the row actions (with nonces)
+- [x] Extract shared `Attachment_Processor::process( $id, $dry_run, $orig_metadata = null )` and rewire Upload_Handler + Bulk_Processor
+- [x] Add `_tri_processing_log` meta writer (last 5 entries, newest first) inside Attachment_Processor
+- [x] Media Library list-table column: "Tidy" — icons for protected / processed / has-backup / conversion-skipped
+- [x] Row actions: Protect, Unprotect (AJAX-driven, nonce + capability checked)
+- [x] Track auto-translated POT + per-locale `.po`/`.mo` files (8 locales)
+
+### Up next (Milestone 8b — remaining Media Library UI)
+
+- [ ] Row action: Optimize Now (delegates to `Attachment_Processor::process( $id, false )` — ignores global dry-run setting per the M8a decision)
+- [ ] Row action: Restore Original (when backup exists; reuses `Trash_Manager::restore`)
+- [ ] Bulk actions: Protect, Unprotect, Optimize, Restore (using WP's bulk-actions API on upload.php)
+- [ ] Attachment edit screen meta box: protected toggle + processing log preview (consumes `_tri_processing_log` written in M8a)
+- [ ] Grid-mode protection toggle via `attachment_fields_to_edit` (smaller surface than list mode but covers users who never switch to list view)
 
 ---
 
@@ -140,11 +144,21 @@ Upload-time processing (M5) is a lower-priority safety net.
 
 ### M8 — Media Library UI
 Surface protection, status, restore in the standard Media Library.
+Split into M8a (foundation + cheap wins, done) and M8b (remaining
+user-visible surface).
 
-- [ ] "Tidy" column (icon: protected / processed / has backup)
-- [ ] Row actions: Protect, Unprotect, Restore Original, Optimize Now
+#### M8a — done ✅
+- [x] Shared `Attachment_Processor` extracted; Upload_Handler and Bulk_Processor rewired
+- [x] `_tri_processing_log` meta writer inside Attachment_Processor (last 5 entries)
+- [x] "Tidy" column (icons: protected / processed / has-backup / conversion-skipped)
+- [x] Row actions: Protect / Unprotect (AJAX, vanilla JS, no jQuery)
+- [x] Translations: POT + 8 locales tracked in `languages/`
+
+#### M8b — pending
+- [ ] Row actions: Optimize Now (ignores global dry-run setting), Restore Original
 - [ ] Bulk actions: Protect, Unprotect, Optimize, Restore
-- [ ] Attachment edit screen meta box
+- [ ] Attachment edit-screen meta box (consumes `_tri_processing_log`)
+- [ ] Grid-mode protection toggle via `attachment_fields_to_edit`
 
 ### M9 — WP-CLI
 Wrap M2–M7 functionality so the operator can run everything from the CLI.
