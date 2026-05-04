@@ -282,8 +282,8 @@ class Image_Processor {
 	 *
 	 * Branch table:
 	 *   image/png    → has_alpha ? alpha-target : lossy-target  → convert (or recompress if same MIME)
-	 *   image/jpeg   → recompress in place at jpeg_quality
-	 *   image/webp   → recompress in place at lossy_quality
+	 *   image/jpeg   → lossy-target (convert if different, else recompress at jpeg_quality)
+	 *   image/webp   → lossy-target (convert if different, else recompress at lossy_quality)
 	 *   image/heic   → convert to lossy-target (capability-gated; skip if no Imagick HEIC)
 	 *   image/gif    → animated ? skip : convert to lossy-target
 	 *   image/svg+xml→ skip (vector format; out of our scope)
@@ -291,6 +291,15 @@ class Image_Processor {
 	 * After branch selection, max-edge resize is applied if the source's
 	 * longest edge exceeds rules.max_edge. AVIF target is downgraded to
 	 * WebP if the host can't write AVIF.
+	 *
+	 * For lossy sources (JPEG, WebP) where the chosen target differs
+	 * from the source MIME, the orchestrator
+	 * (`Attachment_Processor::process()`) treats the resulting plan as a
+	 * convert-with-fallback: if the converted file ends up larger than
+	 * the source, it retries with `recompress_plan()` to recompress in
+	 * the source format before declaring the result discarded. That
+	 * gives most JPEGs a chance at WebP savings while preserving the
+	 * "always at least try in-place recompression" promise.
 	 *
 	 * @since 0.1.0
 	 *
@@ -321,17 +330,36 @@ class Image_Processor {
 				break;
 
 			case MIME_JPEG:
-				$target_mime = MIME_JPEG;
-				$quality     = (int) $rules['jpeg_quality'];
-				$action      = 'recompress';
-				$reason      = 'jpeg_recompress';
+				$target_mime = (string) $rules['lossy_target'];
+
+				if ( MIME_JPEG === $target_mime ) {
+					// Operator chose JPEG as their lossy target — straight
+					// in-place recompression at jpeg_quality.
+					$quality = (int) $rules['jpeg_quality'];
+					$action  = 'recompress';
+					$reason  = 'jpeg_recompress';
+				} else {
+					// Convert to the operator's preferred lossy format. If
+					// the result ends up larger than the source, the
+					// orchestrator falls back to a JPEG recompression.
+					$quality = (int) $rules['lossy_quality'];
+					$action  = 'convert';
+					$reason  = 'jpeg_to_lossy_target';
+				}
 				break;
 
 			case MIME_WEBP:
-				$target_mime = MIME_WEBP;
-				$quality     = (int) $rules['lossy_quality'];
-				$action      = 'recompress';
-				$reason      = 'webp_recompress';
+				$target_mime = (string) $rules['lossy_target'];
+
+				if ( MIME_WEBP === $target_mime ) {
+					$quality = (int) $rules['lossy_quality'];
+					$action  = 'recompress';
+					$reason  = 'webp_recompress';
+				} else {
+					$quality = (int) $rules['lossy_quality'];
+					$action  = 'convert';
+					$reason  = 'webp_to_lossy_target';
+				}
 				break;
 
 			case MIME_HEIC:
@@ -399,6 +427,72 @@ class Image_Processor {
 			'max_edge'    => $max_edge,
 			'strip_exif'  => (bool) ( $rules['strip_exif'] ?? true ),
 			'reason'      => $reason,
+		);
+	}
+
+	/**
+	 * Build a fallback Plan that recompresses an image in its source
+	 * format, for use when the primary `convert` plan produced a result
+	 * larger than the source.
+	 *
+	 * Only applicable when the source MIME is one we can both read and
+	 * write — currently JPEG and WebP. Returns null otherwise (PNG / GIF
+	 * sources where falling back to a lossless re-encode would almost
+	 * always be larger than the source anyway, and HEIC sources, where
+	 * we have no encoder).
+	 *
+	 * The returned plan inherits max_edge, strip_exif, and source_meta
+	 * from the original plan but switches target_mime to the source
+	 * MIME and picks the source-format quality knob (jpeg_quality for
+	 * JPEG sources, lossy_quality for WebP sources).
+	 *
+	 * @since 0.4.0
+	 *
+	 * @param array<string, mixed> $plan  Original plan (must be a
+	 *                                    `convert` plan whose primary
+	 *                                    execute already returned
+	 *                                    `committed=false`).
+	 * @param array<string, mixed> $rules Ruleset.
+	 *
+	 * @return array<string, mixed>|null Fallback plan or null when no
+	 *                                   fallback is applicable.
+	 */
+	public function recompress_plan( array $plan, array $rules ): ?array {
+		// Only the convert path has a meaningful "recompress in source
+		// format" fallback — recompress plans already are the fallback.
+		if ( 'convert' !== ( $plan['action'] ?? '' ) ) {
+			return null;
+		}
+
+		$source_mime = (string) ( $plan['source_meta']['mime'] ?? '' );
+		$quality     = 0;
+		$supported   = true;
+
+		switch ( $source_mime ) {
+			case MIME_JPEG:
+				$quality = (int) ( $rules['jpeg_quality'] ?? 0 );
+				break;
+			case MIME_WEBP:
+				$quality = (int) ( $rules['lossy_quality'] ?? 0 );
+				break;
+			default:
+				$supported = false;
+		}
+
+		if ( ! $supported ) {
+			return null;
+		}
+
+		return array(
+			'action'      => 'recompress',
+			'target_mime' => $source_mime,
+			'quality'     => $quality,
+			'max_edge'    => $plan['max_edge'] ?? null,
+			'strip_exif'  => (bool) ( $plan['strip_exif'] ?? true ),
+			'reason'      => 'recompress_fallback',
+			'source_meta' => isset( $plan['source_meta'] ) && is_array( $plan['source_meta'] )
+				? $plan['source_meta']
+				: array(),
 		);
 	}
 

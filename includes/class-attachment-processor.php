@@ -177,8 +177,28 @@ class Attachment_Processor {
 		}
 
 		if ( ! $exec['committed'] ) {
-			// Larger-than-source — record memo so subsequent runs short-
-			// circuit, and discard the unused backup.
+			// Primary `convert` produced a result no smaller than the source.
+			// Before declaring this a discard, give the source-format
+			// recompression a shot — it usually wins for JPEGs that don't
+			// compress well as WebP (already-low-quality, line art, etc.).
+			$fallback = $this->try_recompress_fallback( $processor, $plan, $rules, $current_file );
+
+			if ( ! is_null( $fallback ) ) {
+				$exec                  = $fallback['exec'];
+				$plan                  = $fallback['plan'];
+				$result['target_mime'] = (string) $plan['target_mime'];
+				$result['quality']     = (int) $plan['quality'];
+				// (We don't propagate $plan['reason'] here — commit() will
+				// overwrite result['reason'] to 'committed' before
+				// record_log() runs. Operators can identify a fallback
+				// commit from the log by source_mime == target_mime.)
+			}
+		}
+
+		if ( ! $exec['committed'] ) {
+			// Either no fallback was applicable (PNG/HEIC source, or the
+			// primary was already a recompress) or the fallback also produced
+			// a larger result. Record the memo and clean up.
 			Skip_Memo::record( $id, (string) ( $plan['target_mime'] ?? '' ), $hash );
 
 			if ( $backup_enabled ) {
@@ -302,6 +322,53 @@ class Attachment_Processor {
 		$this->record_log( $id, $result );
 
 		return $result;
+	}
+
+	/**
+	 * Attempt a source-format recompress fallback after a primary
+	 * `convert` plan was discarded for being larger than the source.
+	 *
+	 * Returns an array `{ exec, plan }` on a successful fallback (caller
+	 * uses these as the canonical exec/plan from here on), or null when
+	 * either no fallback is applicable (`recompress_plan()` returned
+	 * null) or the fallback itself failed / also produced a larger
+	 * result.
+	 *
+	 * @since 0.4.0
+	 *
+	 * @param Image_Processor      $processor    Shared processor instance.
+	 * @param array<string, mixed> $plan         Original (primary) plan.
+	 * @param array<string, mixed> $rules        Ruleset.
+	 * @param string               $current_file Source file path.
+	 *
+	 * @return array{exec: array<string, mixed>, plan: array<string, mixed>}|null
+	 */
+	private function try_recompress_fallback( Image_Processor $processor, array $plan, array $rules, string $current_file ): ?array {
+		$fallback_plan = $processor->recompress_plan( $plan, $rules );
+
+		if ( is_null( $fallback_plan ) ) {
+			return null;
+		}
+
+		$fallback_exec = $processor->execute( $fallback_plan, $current_file );
+
+		if ( ! $fallback_exec['success'] || ! $fallback_exec['committed'] ) {
+			// Defensive cleanup — Image_Processor::execute already deletes
+			// its own temp on the larger-than-source path, so this only
+			// fires for unusual error states.
+			$tmp = (string) ( $fallback_exec['output_path'] ?? '' );
+
+			if ( '' !== $tmp && file_exists( $tmp ) ) {
+				wp_delete_file( $tmp );
+			}
+
+			return null;
+		}
+
+		return array(
+			'exec' => $fallback_exec,
+			'plan' => $fallback_plan,
+		);
 	}
 
 	/**

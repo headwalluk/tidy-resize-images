@@ -293,15 +293,22 @@ a UI placeholder marked "Coming soon".
    settings_hash?                          → skip
 4. Source MIME determines branch:
      image/png    → has alpha? alpha-target : lossy-target
-     image/jpeg   → lossy-target (recompress, may also resize)
-     image/webp   → lossy-target (recompress, may also resize)
+     image/jpeg   → lossy-target (convert if different MIME, else recompress)
+     image/webp   → lossy-target (convert if different MIME, else recompress)
      image/heic   → lossy-target (convert, may also resize) — capability-gated
      image/gif    → static? lossy-target : skip (animated)
      image/svg+xml → skip
 5. Apply max-edge resize if needed (always lossless transform)
 6. Encode at chosen target/quality
-7. If output_bytes >= input_bytes
-      AND no dimension change occurred    → discard, write skip marker
+7. If output_bytes >= input_bytes AND no dimension change:
+     a. If source is a writable lossy format (JPEG / WebP) AND the
+        plan was a `convert` (target ≠ source MIME), retry with
+        `Image_Processor::recompress_plan()` — recompress in source
+        format at jpeg_quality (JPEG) or lossy_quality (WebP).
+     b. If retry also yields larger-than-source, OR no fallback was
+        applicable (PNG/HEIC/GIF source, or primary was already a
+        recompress) → discard, write skip-memo.
+     c. Otherwise → commit the fallback result, backup original.
    else                                   → commit, backup original
 ```
 

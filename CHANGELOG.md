@@ -7,7 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-(Nothing yet.)
+### Changed
+- **JPEG and WebP sources now convert to the operator's `lossy_target`
+  by default.** Previously they were recompressed in-place at
+  `jpeg_quality` / `lossy_quality`, which left a lot of savings on
+  the table for sites whose `lossy_target` is WebP (the default).
+  The decision tree in the project tracker has documented this
+  intent since M2; the M2 implementation simplified to in-place
+  recompression and that simplification has rotted long enough.
+
+  When the converted file ends up larger than the source, the
+  orchestrator now retries with a recompress-in-source-format
+  fallback before declaring the result discarded. So:
+
+      Source    Primary attempt          Fallback (if primary fails)
+      ------    ---------------          ---------------------------
+      JPEG      → WebP @ lossy_quality   → JPEG @ jpeg_quality
+      WebP      → AVIF @ lossy_quality   → WebP @ lossy_quality
+      JPEG      (lossy_target=JPEG)      n/a — primary IS recompress
+      PNG-opaq  → WebP @ lossy_quality   n/a — no lossless fallback
+      PNG-alpha → WebP @ alpha_quality   n/a
+      HEIC      → WebP @ lossy_quality   n/a — no HEIC encoder
+      GIF       → WebP @ lossy_quality   n/a
+
+  Only after BOTH primary and fallback yield larger-than-source do
+  we record a skip-memo and discard. Net effect on the dev-host
+  bulk-runner smoke test: a ~100 KB JPEG fixture that previously
+  saved ~57 KB now saves ~85 KB by converting to WebP.
+
+  New `Image_Processor::recompress_plan( $plan, $rules )` builds
+  the fallback Plan; `Attachment_Processor::process()` orchestrates
+  the retry. Existing JPEGs already processed under earlier
+  versions are not re-run automatically (the bulk scanner still
+  filters out attachments with `_tri_processed_at`); operators who
+  want to re-optimise can use the **Optimize Now** row action or
+  restore-then-rerun.
 
 ## [0.4.0] - 2026-05-04
 
