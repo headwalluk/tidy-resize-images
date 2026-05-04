@@ -102,6 +102,8 @@ class Plugin {
 			add_filter( 'media_row_actions', array( $media_library, 'register_row_actions' ), 10, 2 );
 			add_action( 'admin_enqueue_scripts', array( $media_library, 'enqueue_assets' ) );
 			add_action( 'wp_ajax_tri_set_protected', array( $media_library, 'ajax_set_protected' ) );
+			add_action( 'wp_ajax_tri_optimize_now', array( $media_library, 'ajax_optimize_now' ) );
+			add_action( 'wp_ajax_tri_restore_original', array( $media_library, 'ajax_restore_original' ) );
 		}
 	}
 

@@ -30,7 +30,7 @@
 	color: #a7aaad;
 }
 
-.tri-row-action-protect[data-busy="1"] {
+.tri-row-action[data-busy="1"] {
 	opacity: 0.5;
 	pointer-events: none;
 }
