@@ -108,6 +108,9 @@ class Plugin {
 			add_action( 'edit_attachment', array( $media_library, 'save_meta_box' ) );
 			add_filter( 'attachment_fields_to_edit', array( $media_library, 'add_grid_mode_field' ), 10, 2 );
 			add_filter( 'attachment_fields_to_save', array( $media_library, 'save_grid_mode_field' ), 10, 2 );
+			add_filter( 'bulk_actions-upload', array( $media_library, 'register_bulk_actions' ) );
+			add_filter( 'handle_bulk_actions-upload', array( $media_library, 'handle_bulk_actions' ), 10, 3 );
+			add_action( 'admin_notices', array( $media_library, 'render_bulk_notices' ) );
 		}
 	}
 

@@ -256,6 +256,170 @@ class Media_Library_Hooks {
 	}
 
 	/**
+	 * Add Tidy entries to the upload.php bulk-actions dropdown.
+	 *
+	 * Hook: `bulk_actions-upload`. Two actions only:
+	 *
+	 *   - tri_protect   — set _tri_protected on every selected image
+	 *   - tri_unprotect — clear _tri_protected on every selected image
+	 *
+	 * Bulk Restore and bulk Optimize are intentionally absent. Restore is
+	 * destructive (loses the optimised version); doing 50 in one click
+	 * is a foot-gun, so the row action stays single-shot. Bulk Optimize
+	 * is covered by the dedicated Bulk page (Tidy Images → Bulk) which
+	 * has progress, abort, and cron — better tooling for the workflow.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array<string, string> $actions Existing bulk-action labels keyed by slug.
+	 *
+	 * @return array<string, string>
+	 */
+	public function register_bulk_actions( array $actions ): array {
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			return $actions;
+		}
+
+		$actions['tri_protect']   = __( 'Tidy: Protect', 'tidy-resize-images' );
+		$actions['tri_unprotect'] = __( 'Tidy: Unprotect', 'tidy-resize-images' );
+
+		return $actions;
+	}
+
+	/**
+	 * Apply a Tidy bulk action to the selected attachment IDs.
+	 *
+	 * Hook: `handle_bulk_actions-upload`. WP passes us a redirect URL,
+	 * the action slug, and the array of selected post IDs. We mutate
+	 * meta for image attachments only and append `tri_bulk` and
+	 * `tri_count` to the redirect URL so `render_bulk_notices` can
+	 * surface the result.
+	 *
+	 * Non-image attachments and posts the operator can't edit are
+	 * silently skipped.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string     $sendback Redirect URL to append to.
+	 * @param string     $action   Bulk action slug.
+	 * @param array<int> $ids      Selected post IDs.
+	 *
+	 * @return string Redirect URL.
+	 */
+	public function handle_bulk_actions( $sendback, $action, $ids ): string {
+		$sendback = (string) $sendback;
+		$action   = (string) $action;
+		$ids      = array_map( 'intval', (array) $ids );
+
+		if ( 'tri_protect' !== $action && 'tri_unprotect' !== $action ) {
+			return $sendback;
+		}
+
+		if ( ! current_user_can( ADMIN_CAPABILITY ) ) {
+			return $sendback;
+		}
+
+		$changed = 0;
+
+		foreach ( $ids as $id ) {
+			if ( $id <= 0 ) {
+				continue;
+			}
+
+			$post = get_post( $id );
+
+			if ( is_null( $post ) || 'attachment' !== $post->post_type ) {
+				continue;
+			}
+
+			if ( 0 !== strpos( (string) $post->post_mime_type, 'image/' ) ) {
+				continue;
+			}
+
+			if ( 'tri_protect' === $action ) {
+				update_post_meta( $id, META_PROTECTED, '1' );
+			} else {
+				delete_post_meta( $id, META_PROTECTED );
+			}
+
+			++$changed;
+		}
+
+		return add_query_arg(
+			array(
+				'tri_bulk'  => $action,
+				'tri_count' => $changed,
+			),
+			$sendback
+		);
+	}
+
+	/**
+	 * Render the success notice after a Tidy bulk action ran.
+	 *
+	 * Hook: `admin_notices`, scoped to the upload screen. Reads the
+	 * `tri_bulk` and `tri_count` query args set by `handle_bulk_actions`.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @return void
+	 */
+	public function render_bulk_notices(): void {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( is_null( $screen ) || 'upload' !== $screen->id ) {
+			return;
+		}
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only flash from our own redirect.
+		if ( ! isset( $_GET['tri_bulk'] ) ) {
+			return;
+		}
+
+		$action = sanitize_key( wp_unslash( $_GET['tri_bulk'] ) );
+		$count  = isset( $_GET['tri_count'] ) ? (int) $_GET['tri_count'] : 0;
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		$message = '';
+
+		switch ( $action ) {
+			case 'tri_protect':
+				$message = sprintf(
+					/* translators: %d: number of attachments protected */
+					_n(
+						'%d attachment marked as protected by Tidy.',
+						'%d attachments marked as protected by Tidy.',
+						$count,
+						'tidy-resize-images'
+					),
+					$count
+				);
+				break;
+			case 'tri_unprotect':
+				$message = sprintf(
+					/* translators: %d: number of attachments unprotected */
+					_n(
+						'%d attachment unprotected.',
+						'%d attachments unprotected.',
+						$count,
+						'tidy-resize-images'
+					),
+					$count
+				);
+				break;
+		}
+
+		if ( '' === $message ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
+			esc_html( $message )
+		);
+	}
+
+	/**
 	 * Register the "Tidy" meta box on the attachment edit screen.
 	 *
 	 * Hook: `add_meta_boxes_attachment`. Renders a compact panel in the
