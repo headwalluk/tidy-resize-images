@@ -9,6 +9,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 (Nothing yet.)
 
+## [0.4.0] - 2026-05-04
+
+Completes the Media Library admin surface (M8). All four row actions
+ship; bulk Protect / Unprotect on upload.php; protection toggle on the
+classic attachment edit screen and in the grid-mode modal; per-
+attachment processing-log preview in the edit-screen meta box.
+
+Bulk Restore and bulk Optimize are deliberately absent — see CHANGELOG
+notes below.
+
+### Added
+- Row action: **Optimize Now** on image attachments. Runs
+  `Attachment_Processor::process( $id, false )` live (always ignoring
+  the global dry-run setting — a single deliberate click is treated as
+  intent to actually mutate). Hidden when the attachment is protected;
+  the AJAX handler also re-checks server-side as defense in depth.
+- Row action: **Restore Original** on image attachments that have a
+  `_tri_backup` record. Delegates to `Trash_Manager::restore()` —
+  which (since 0.3.0) clears `_tri_processed_at` and
+  `_tri_conversion_skipped` so the restored attachment is eligible
+  for the bulk processor again.
+- Bulk actions: **Tidy: Protect** / **Tidy: Unprotect** on
+  `upload.php`. Mutates `_tri_protected` across selected image
+  attachments; non-images and posts the operator can't edit are
+  silently skipped. Success notice surfaces a one-line
+  `_n()`-safe message after the redirect.
+- Attachment edit-screen meta box ("Tidy Resize Images") on
+  `post.php?post=N&action=edit`. Two pieces:
+  - Protected checkbox saved via the `edit_attachment` hook with our
+    own nonce + capability check.
+  - Recent activity preview rendering up to five entries from
+    `_tri_processing_log`, each with a colour-coded left border, the
+    action label (Optimised / Discarded / Skipped / Errored /
+    Planned), the timestamp, and the format change + savings.
+- Grid-mode protection toggle via the `attachment_fields_to_edit`
+  filter, so operators who never switch the Media Library to list
+  mode can still mark images do-not-touch. A hidden
+  `tri_protected_present` marker rendered alongside the checkbox
+  lets the save handler distinguish "operator unticked the box"
+  from "the filter fired without our field rendering" (HTML form
+  convention is that an unchecked checkbox submits nothing).
+
+### Not added (by design)
+- **Bulk Restore.** Restore loses the optimised version; doing 50 in
+  one click is a foot-gun. Restore stays single-row deliberate. See
+  `feedback_destructive_ops_deliberate.md` in the auto-memory store
+  for the full reasoning.
+- **Bulk Optimize.** The dedicated Bulk page (Tidy Images → Bulk)
+  with progress, abort, and the daily-cron variant is the right
+  surface for batch optimisation.
+
+### Changed
+- Row-action class consolidated from the M8a-era
+  `tri-row-action-protect` to a generic `tri-row-action`. Each link
+  now carries `data-tri-action` (one of `protect`, `optimize`,
+  `restore`) which the JS handler maps to the appropriate
+  `wp_ajax_*` action. Single click delegate handles all three;
+  busy-state CSS rule applies uniformly.
+- `verify_ajax_request()` helper extracted in
+  `Media_Library_Hooks` to dedupe the nonce + capability + post-id
+  validation across the three AJAX endpoints.
+- Live UI updates after AJAX actions are deliberately partial:
+  Protect/Unprotect toggles its own label; Restore Original removes
+  its own row-action span; Optimize Now resets its label and updates
+  the Tidy column. The freshly-applicable "Restore Original" link
+  after a successful Optimize won't appear without a page refresh —
+  documented v1 limitation; live row-action reconciliation would
+  require parsing WP's separator-laden span wrapping.
+
 ## [0.3.0] - 2026-05-04
 
 A focused release covering the Media Library list-mode surface, an

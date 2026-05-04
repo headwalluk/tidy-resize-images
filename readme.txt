@@ -4,7 +4,7 @@ Tags: media, images, optimization, resize, webp
 Requires at least: 6.2
 Tested up to: 6.7
 Requires PHP: 8.3
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,7 +20,7 @@ Tidy Resize Images applies three classes of fix to your Media Library:
 
 Originals are backed up to a Trash directory inside `wp-content/uploads/` and can be restored from the admin UI. A dry-run mode shows you exactly what would change before you commit.
 
-== Features (v0.3.0) ==
+== Features (v0.4.0) ==
 
 * Resize on upload (using the configurable maximum longest edge).
 * Recompress on upload using your chosen target format (WebP or AVIF where supported).
@@ -28,7 +28,13 @@ Originals are backed up to a Trash directory inside `wp-content/uploads/` and ca
 * Daily cron variant of the bulk processor — processes a small batch each day so large libraries clear over time without spiking server load.
 * Originals trash with one-click **Restore** or **Restore &amp; protect** (the latter puts the original file back AND marks the attachment do-not-touch so it stays out of future runs).
 * "Tidy" column on the Media Library list view, showing per-row state at a glance: protected, processed, has-backup, conversion-skipped.
-* Per-row **Protect** / **Unprotect** action on image attachments (live AJAX, no page reload).
+* Per-row actions on image attachments (live AJAX, no page reload):
+    * **Protect** / **Unprotect** — toggle the do-not-touch flag.
+    * **Optimize Now** — run the processor against this attachment immediately, ignoring the global dry-run setting.
+    * **Restore Original** — restore from the trash backup if one exists.
+* Bulk actions on the Media Library: **Tidy: Protect** and **Tidy: Unprotect** for marking many images do-not-touch (or releasing them) in one click.
+* Attachment edit-screen meta box: protection toggle plus a preview of the last five processing-log entries (action, timestamp, format change, savings).
+* Grid-mode protection toggle in the Media Library modal, so operators who never switch to list view can still mark images do-not-touch.
 * Database search-and-replace when a file is renamed (PNG → WebP), with serialised-data-aware rewriting that handles raw and JSON-escaped URLs.
 * Dry-run mode for both upload-time processing and the bulk runner.
 * Filter hook (`tri_format_decision`) for custom format-decision logic.
@@ -36,12 +42,10 @@ Originals are backed up to a Trash directory inside `wp-content/uploads/` and ca
 
 == Roadmap ==
 
-* More Media Library row actions ("Optimize Now", "Restore Original") and bulk actions for the same — in development.
-* Attachment edit-screen meta box surfacing the per-attachment processing log.
-* Grid-mode protection toggle (Media Library grid view, not just list view).
-* Full WP-CLI surface (`wp tidy-images scan | process | protect | restore | trash | settings`) — in development.
+* Full WP-CLI surface (`wp tidy-images scan | process | protect | restore | trash | settings`) — next milestone.
 * Auto-purge of trashed originals after a configurable retention period.
 * `uninstall.php` to clean up plugin options on removal (trash files left in place — your originals are safe).
+* Stale-trash-record cleanup on the Trash page, for sites with backup records written by older versions of the plugin or with paths from a previous WordPress configuration.
 
 == Installation ==
 

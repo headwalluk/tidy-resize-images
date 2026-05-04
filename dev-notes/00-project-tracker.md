@@ -1,9 +1,9 @@
 # Project Tracker
 
-**Version:** 0.3.0
+**Version:** 0.4.0
 **Last Updated:** 2026-05-04
-**Current Phase:** Milestone 8 (Media Library UI)
-**Overall Progress:** 78%
+**Current Phase:** Milestone 9 (WP-CLI)
+**Overall Progress:** 88%
 
 ---
 
@@ -23,24 +23,36 @@ ignores file-size-only problems and offers no restore path.
 
 ## Active TODO Items
 
-### M8a (this evening) — done ✅
+### M8 — done ✅ (split across two evenings, both 2026-05-04)
 
-Foundation work plus the cheapest user-visible wins. Refactor-driven so
-later M8 features build on a clean base.
-
+M8a (foundation + cheap wins, evening session 1):
 - [x] Extract shared `Attachment_Processor::process( $id, $dry_run, $orig_metadata = null )` and rewire Upload_Handler + Bulk_Processor
 - [x] Add `_tri_processing_log` meta writer (last 5 entries, newest first) inside Attachment_Processor
 - [x] Media Library list-table column: "Tidy" — icons for protected / processed / has-backup / conversion-skipped
 - [x] Row actions: Protect, Unprotect (AJAX-driven, nonce + capability checked)
 - [x] Track auto-translated POT + per-locale `.po`/`.mo` files (8 locales)
+- [x] Trash restore now clears `_tri_processed_at` + `_tri_conversion_skipped`; new "Restore & protect" button on the Trash page
 
-### Up next (Milestone 8b — remaining Media Library UI)
+M8b (rest of the Media Library surface, evening session 2):
+- [x] Row action: Optimize Now — delegates to `Attachment_Processor::process( $id, false )`; ignores global dry-run; hidden on protected attachments
+- [x] Row action: Restore Original — only when `_tri_backup` exists
+- [x] Bulk actions: Protect, Unprotect (no bulk Restore — destructive-ops-deliberate; no bulk Optimize — Bulk page covers it)
+- [x] Attachment edit-screen meta box: protected toggle + processing log preview
+- [x] Grid-mode protection toggle via `attachment_fields_to_edit` (with hidden marker for unticked-checkbox detection)
 
-- [ ] Row action: Optimize Now (delegates to `Attachment_Processor::process( $id, false )` — ignores global dry-run setting per the M8a decision)
-- [ ] Row action: Restore Original (when backup exists; reuses `Trash_Manager::restore`)
-- [ ] Bulk actions: Protect, Unprotect, Optimize, Restore (using WP's bulk-actions API on upload.php)
-- [ ] Attachment edit screen meta box: protected toggle + processing log preview (consumes `_tri_processing_log` written in M8a)
-- [ ] Grid-mode protection toggle via `attachment_fields_to_edit` (smaller surface than list mode but covers users who never switch to list view)
+### Up next (Milestone 9 — WP-CLI)
+
+Wrap M2–M8 functionality so the operator can run everything from the
+CLI. The interactive Bulk page is the headline workflow; WP-CLI is for
+automation / scripted use / SSH-only ops.
+
+- [ ] `wp tidy-images scan` — show count_candidates + a sample of the first N
+- [ ] `wp tidy-images process <id|--all>` with `--dry-run`, `--limit`, `--batch-size`
+- [ ] `wp tidy-images protect <id...>` / `unprotect <id...>`
+- [ ] `wp tidy-images restore <id>`
+- [ ] `wp tidy-images trash list | purge`
+- [ ] `wp tidy-images settings get | set`
+- [ ] `wp tidy-images caps` — show detected GD/Imagick capabilities
 
 ---
 
@@ -142,29 +154,27 @@ Upload-time processing (M5) is a lower-priority safety net.
 - [x] WP-CLI smoke-test snippet `dev-notes/smoke-tests/bulk-runner.php`
 - [ ] Cron-scheduling UI (interval/batch-size override) — deferred to M10 polish per agreement
 
-### M8 — Media Library UI
-Surface protection, status, restore in the standard Media Library.
-Split into M8a (foundation + cheap wins, done) and M8b (remaining
-user-visible surface).
+### M8 — Media Library UI ✅
+Surface protection, status, restore in the standard Media Library list
+view, the modal grid edit form, and the classic attachment edit screen.
 
-#### M8a — done ✅
 - [x] Shared `Attachment_Processor` extracted; Upload_Handler and Bulk_Processor rewired
 - [x] `_tri_processing_log` meta writer inside Attachment_Processor (last 5 entries)
 - [x] "Tidy" column (icons: protected / processed / has-backup / conversion-skipped)
-- [x] Row actions: Protect / Unprotect (AJAX, vanilla JS, no jQuery)
+- [x] Row actions: Protect / Unprotect / Optimize Now / Restore Original (AJAX, vanilla JS, no jQuery)
+- [x] Bulk actions: Protect / Unprotect (no bulk Restore or Optimize — by design)
+- [x] Attachment edit-screen meta box: protected toggle + processing log preview
+- [x] Grid-mode protection toggle via `attachment_fields_to_edit`
+- [x] Trash page: "Restore & protect" button alongside Restore + Purge
 - [x] Translations: POT + 8 locales tracked in `languages/`
 
-#### M8b — pending
-- [ ] Row actions: Optimize Now (ignores global dry-run setting), Restore Original
-- [ ] Bulk actions: Protect, Unprotect, Optimize, Restore
-- [ ] Attachment edit-screen meta box (consumes `_tri_processing_log`)
-- [ ] Grid-mode protection toggle via `attachment_fields_to_edit`
-
 ### M9 — WP-CLI
-Wrap M2–M7 functionality so the operator can run everything from the CLI.
+Wrap M2–M8 functionality so the operator can run everything from the
+CLI. The interactive Bulk page is the headline workflow; WP-CLI is for
+automation / scripted use / SSH-only ops.
 
-- [ ] `wp tidy-images scan`
-- [ ] `wp tidy-images process <id|--all>` with `--dry-run`, `--limit`
+- [ ] `wp tidy-images scan` — show count_candidates + sample of the first N
+- [ ] `wp tidy-images process <id|--all>` with `--dry-run`, `--limit`, `--batch-size`
 - [ ] `wp tidy-images protect <id...>` / `unprotect <id...>`
 - [ ] `wp tidy-images restore <id>`
 - [ ] `wp tidy-images trash list | purge`
@@ -175,7 +185,9 @@ Wrap M2–M7 functionality so the operator can run everything from the CLI.
 - [ ] Status tab: live counts and last-run summary
 - [ ] Trash retention cron auto-purge
 - [ ] uninstall.php — clean removal of options + meta (keep trash files; let user purge manually)
-- [ ] Translation files scaffolding
+- [ ] Translation files scaffolding (build script for re-running the DeepL tool against current strings)
+- [ ] Stale trash records: defensive cleanup on the Trash page. ~20 backup records on the dev site have `path`/`orig_path` strings missing the docroot prefix (`/web/...` instead of `/var/www/.../web/...`) — likely written when WP was returning shorter paths. They `restore_failed` cleanly today, but the operator can't recover from them. Two reasonable fixes: (a) detect and offer a one-click "purge stale record" button per row, (b) auto-heal by retrying with the docroot-prefixed path before declaring failure. Lean toward (a) — simpler and keeps the operator in control.
+- [ ] DRY the four `now_formatted()` copies (Trash_Manager, Skip_Memo, etc. still hold private versions; functions-private.php has the canonical helper since 0.3.0)
 
 ---
 
