@@ -1,0 +1,36 @@
+/*
+ * Tidy Resize Images — Media Library list-mode styles.
+ *
+ * Loaded on upload.php only via Media_Library_Hooks::enqueue_assets().
+ * Kept deliberately small — relies on the dashicons stylesheet for the
+ * actual icon glyphs.
+ */
+
+.column-tri_tidy {
+	white-space: nowrap;
+	width: 100px;
+}
+
+.tri-tidy-flag {
+	margin-right: 4px;
+	color: #2271b1;
+	cursor: help;
+	vertical-align: middle;
+}
+
+.tri-tidy-flag.dashicons-warning {
+	color: #d63638;
+}
+
+.tri-tidy-flag.dashicons-lock {
+	color: #50575e;
+}
+
+.tri-tidy-empty {
+	color: #a7aaad;
+}
+
+.tri-row-action-protect[data-busy="1"] {
+	opacity: 0.5;
+	pointer-events: none;
+}

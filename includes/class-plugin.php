@@ -98,6 +98,9 @@ class Plugin {
 
 			add_filter( 'manage_upload_columns', array( $media_library, 'register_columns' ) );
 			add_action( 'manage_media_custom_column', array( $media_library, 'render_column' ), 10, 2 );
+			add_filter( 'media_row_actions', array( $media_library, 'register_row_actions' ), 10, 2 );
+			add_action( 'admin_enqueue_scripts', array( $media_library, 'enqueue_assets' ) );
+			add_action( 'wp_ajax_tri_set_protected', array( $media_library, 'ajax_set_protected' ) );
 		}
 	}
 
