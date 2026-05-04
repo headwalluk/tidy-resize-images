@@ -4,7 +4,7 @@ Tags: media, images, optimization, resize, webp
 Requires at least: 6.2
 Tested up to: 6.7
 Requires PHP: 8.3
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,10 +20,11 @@ Tidy Resize Images applies three classes of fix to your Media Library:
 
 Originals are backed up to a Trash directory inside `wp-content/uploads/` and can be restored from the admin UI. A dry-run mode shows you exactly what would change before you commit.
 
-== Features (v0.4.0) ==
+== Features (v0.4.1) ==
 
 * Resize on upload (using the configurable maximum longest edge).
 * Recompress on upload using your chosen target format (WebP or AVIF where supported).
+* **Smart format selection** for lossy sources: JPEGs and WebPs are converted to your preferred lossy target by default, with an automatic fallback to source-format recompression when the conversion would not save space.
 * Bulk processor for existing Media Library content, with progress reporting and stop-mid-run.
 * Daily cron variant of the bulk processor — processes a small batch each day so large libraries clear over time without spiking server load.
 * Originals trash with one-click **Restore** or **Restore &amp; protect** (the latter puts the original file back AND marks the attachment do-not-touch so it stays out of future runs).

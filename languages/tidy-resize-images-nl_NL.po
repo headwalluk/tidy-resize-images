@@ -16,6 +16,7 @@ msgstr ""
 #. Plugin Name of the plugin
 #: tidy-resize-images.php
 #: includes/class-admin-hooks.php:73
+#: includes/class-media-library-hooks.php:436
 msgid "Tidy Resize Images"
 msgstr "Afbeeldingen netjes aanpassen"
 
@@ -515,7 +516,7 @@ msgstr "Dik"
 
 #: includes/class-admin-hooks.php:214
 #: includes/class-admin-hooks.php:240
-#: includes/class-media-library-hooks.php:238
+#: includes/class-media-library-hooks.php:957
 msgid "Insufficient permissions."
 msgstr "Onvoldoende rechten."
 
@@ -524,7 +525,7 @@ msgid "You do not have permission to perform this action."
 msgstr "U hebt geen toestemming om deze handeling uit te voeren."
 
 #: includes/class-admin-hooks.php:300
-#: includes/class-media-library-hooks.php:246
+#: includes/class-media-library-hooks.php:965
 msgid "Missing attachment ID."
 msgstr "Bijlage-ID ontbreekt."
 
@@ -586,11 +587,11 @@ msgstr "De afbeeldingseditor heeft geen pad geretourneerd."
 msgid "Encoded successfully but EXIF strip failed."
 msgstr "Het coderen is gelukt, maar het verwijderen van de EXIF-gegevens is mislukt."
 
-#: includes/class-image-processor.php:462
+#: includes/class-image-processor.php:556
 msgid "Resize failed."
 msgstr "Het aanpassen van de grootte is mislukt."
 
-#: includes/class-image-processor.php:474
+#: includes/class-image-processor.php:568
 msgid "Encode failed."
 msgstr "Het coderen is mislukt."
 
@@ -614,49 +615,138 @@ msgstr "Zet het originele bestand terug EN markeer deze bijlage als 'niet wijzig
 msgid "Restore & protect"
 msgstr "Herstellen & beschermen"
 
-#: includes/class-media-library-hooks.php:53
-#: includes/class-media-library-hooks.php:61
+#: includes/class-media-library-hooks.php:67
+#: includes/class-media-library-hooks.php:75
 msgid "Tidy"
 msgstr "Schoon"
 
-#: includes/class-media-library-hooks.php:130
+#: includes/class-media-library-hooks.php:144
+#: includes/class-media-library-hooks.php:470
 msgid "Protected — Tidy will never modify this file."
 msgstr "Beveiligd — Tidy zal dit bestand nooit wijzigen."
 
 #. translators: %s: human-readable timestamp like "2026-05-04 18:32:11 BST"
-#: includes/class-media-library-hooks.php:140
+#: includes/class-media-library-hooks.php:154
 #, php-format
 msgid "Processed by Tidy on %s."
 msgstr "Verwerkt door Tidy op %s."
 
-#: includes/class-media-library-hooks.php:147
+#: includes/class-media-library-hooks.php:161
 msgid "Original is in the Tidy trash and can be restored."
 msgstr "Het origineel bevindt zich in de prullenbak van Tidy en kan worden hersteld."
 
 #. translators: 1: target MIME e.g. image/webp, 2: machine reason
-#: includes/class-media-library-hooks.php:160
+#: includes/class-media-library-hooks.php:174
 #, php-format
 msgid "Tidy tried to convert this to %1$s but the result was no smaller (%2$s). It will be skipped on future runs unless settings change."
 msgstr "Tidy heeft geprobeerd dit om te zetten naar %1$s, maar het resultaat was niet korter (%2$s). Dit wordt bij toekomstige uitvoeringen overgeslagen, tenzij de instellingen worden gewijzigd."
 
-#: includes/class-media-library-hooks.php:165
+#: includes/class-media-library-hooks.php:179
 msgid "Tidy will skip this attachment on future runs (a previous attempt produced no benefit)."
 msgstr "Tidy zal deze bijlage bij toekomstige uitvoeringen overslaan (een eerdere poging leverde geen resultaat op)."
 
-#: includes/class-media-library-hooks.php:211
-#: includes/class-media-library-hooks.php:268
+#: includes/class-media-library-hooks.php:238
+#: includes/class-media-library-hooks.php:785
 msgid "Unprotect"
 msgstr "Beveiliging opheffen"
 
-#: includes/class-media-library-hooks.php:212
-#: includes/class-media-library-hooks.php:269
+#: includes/class-media-library-hooks.php:239
+#: includes/class-media-library-hooks.php:786
 msgid "Protect"
 msgstr "Bescherm"
 
-#: includes/class-media-library-hooks.php:252
+#: includes/class-media-library-hooks.php:971
 msgid "Attachment not found."
 msgstr "Bijlage niet gevonden."
 
-#: includes/class-media-library-hooks.php:316
-msgid "Tidy could not update protection state. Please refresh the page and try again."
-msgstr "Tidy kon de beveiligingsstatus niet bijwerken. Vernieuw de pagina en probeer het opnieuw."
+#: includes/class-media-library-hooks.php:233
+#: includes/class-media-library-hooks.php:914
+msgid "Optimize Now"
+msgstr "Nu optimaliseren"
+
+#: includes/class-media-library-hooks.php:251
+msgid "Restore Original"
+msgstr "Oorspronkelijke staat herstellen"
+
+#: includes/class-media-library-hooks.php:283
+#: includes/class-media-library-hooks.php:535
+msgid "Tidy: Protect"
+msgstr "Tidy: Beschermen"
+
+#: includes/class-media-library-hooks.php:284
+msgid "Tidy: Unprotect"
+msgstr "Opgeruimd: Beveiliging opheffen"
+
+#. translators: %d: number of attachments protected
+#: includes/class-media-library-hooks.php:389
+#, php-format
+msgid "%d attachment marked as protected by Tidy."
+msgid_plural "%d attachments marked as protected by Tidy."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of attachments unprotected
+#: includes/class-media-library-hooks.php:401
+#, php-format
+msgid "%d attachment unprotected."
+msgid_plural "%d attachments unprotected."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-media-library-hooks.php:478
+msgid "Recent activity"
+msgstr "Recente activiteit"
+
+#: includes/class-media-library-hooks.php:484
+msgid "No Tidy activity yet for this attachment."
+msgstr "Er is nog geen Tidy-activiteit voor deze bijlage."
+
+#: includes/class-media-library-hooks.php:546
+msgid "Tidy will never modify this file."
+msgstr "Tidy zal dit bestand nooit wijzigen."
+
+#: includes/class-media-library-hooks.php:548
+msgid "Marks the attachment as do-not-touch. Bulk runs and the upload handler will skip it."
+msgstr "Markeert het bijgevoegde bestand als 'niet aanraken'. Bij bulkverwerkingen en de upload-handler wordt het overgeslagen."
+
+#: includes/class-media-library-hooks.php:679
+msgid "Optimised"
+msgstr "Geoptimaliseerd"
+
+#: includes/class-media-library-hooks.php:682
+msgid "Discarded"
+msgstr "Afgedankt"
+
+#: includes/class-media-library-hooks.php:685
+msgid "Skipped"
+msgstr "Overgeslagen"
+
+#: includes/class-media-library-hooks.php:688
+msgid "Error"
+msgstr "Fout"
+
+#: includes/class-media-library-hooks.php:691
+msgid "Planned (dry-run)"
+msgstr "Gepland (proefdraaien)"
+
+#. translators: 1: human-readable bytes saved, 2: percentage
+#: includes/class-media-library-hooks.php:706
+#, php-format
+msgid "saved %1$s (%2$s%%)"
+msgstr "%1$s opgeslagen (%2$s%%)"
+
+#: includes/class-media-library-hooks.php:811
+msgid "This attachment is protected. Unprotect it first to optimise."
+msgstr "Deze bijlage is beveiligd. Maak deze eerst onbeveiligd om te optimaliseren."
+
+#: includes/class-media-library-hooks.php:848
+msgid "No backup is available for this attachment."
+msgstr "Er is geen back-up beschikbaar voor deze bijlage."
+
+#: includes/class-media-library-hooks.php:859
+msgid "Restore failed. The original file may be missing from the trash directory."
+msgstr "Het herstellen is mislukt. Het originele bestand ontbreekt mogelijk in de prullenbak."
+
+#: includes/class-media-library-hooks.php:913
+msgid "Tidy could not complete that action. Please refresh the page and try again."
+msgstr "Tidy kon deze handeling niet voltooien. Vernieuw de pagina en probeer het opnieuw."

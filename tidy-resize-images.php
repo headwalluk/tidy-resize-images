@@ -3,7 +3,7 @@
  * Plugin Name:       Tidy Resize Images
  * Plugin URI:        https://github.com/headwalluk/tidy-resize-images
  * Description:       Keep the WordPress Media Library lean. Resize oversized uploads, convert unsuitable formats, and recompress bloated files — with originals safely backed up to a Trash directory, dry-run preview, and full WP-CLI control.
- * Version:           0.4.0
+ * Version:           0.4.1
  * Requires at least: 6.2
  * Requires PHP:      8.3
  * Author:            Paul Faulkner
@@ -26,7 +26,7 @@
 defined( 'ABSPATH' ) || die();
 
 define( 'TRI_PLUGIN_FILE', __FILE__ );
-define( 'TRI_PLUGIN_VERSION', '0.4.0' );
+define( 'TRI_PLUGIN_VERSION', '0.4.1' );
 define( 'TRI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TRI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'TRI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );

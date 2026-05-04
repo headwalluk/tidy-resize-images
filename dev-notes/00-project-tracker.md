@@ -1,6 +1,6 @@
 # Project Tracker
 
-**Version:** 0.4.0
+**Version:** 0.4.1
 **Last Updated:** 2026-05-04
 **Current Phase:** Milestone 9 (WP-CLI)
 **Overall Progress:** 88%

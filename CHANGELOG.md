@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+(Nothing yet.)
+
+## [0.4.1] - 2026-05-04
+
+A focused patch that overhauls the format-decision behaviour for
+lossy sources. JPEGs and WebPs now genuinely benefit from the
+operator's preferred lossy target instead of being recompressed in
+place.
+
 ### Changed
 - **JPEG and WebP sources now convert to the operator's `lossy_target`
   by default.** Previously they were recompressed in-place at

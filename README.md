@@ -1,6 +1,6 @@
 # Tidy Resize Images
 
-![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-0.4.1-blue.svg)
 ![WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759b.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.3%2B-777bb4.svg)
 ![License](https://img.shields.io/badge/license-GPLv2%2B-green.svg)
@@ -17,10 +17,11 @@ with originals safely backed up and a dry-run preview.
   format-decision logic, bulk-processing integrations, etc.) instead of
   fighting a large SaaS-coupled image optimizer.
 
-## What's in v0.4.0
+## What's in v0.4.1
 
 - Settings UI (limits, format targets, behaviour, capability status)
 - Image Processor with a format-decision tree (PNG/JPEG/WebP/AVIF/HEIC/GIF) and a `tri_format_decision` filter for custom rules
+- **Smart format selection for lossy sources**: JPEGs and WebPs convert to your preferred lossy target by default; if the conversion would yield a larger file, the orchestrator automatically falls back to source-format recompression before giving up
 - Originals Trash with **Restore** and **Restore & protect** actions (the latter puts the original back AND marks the attachment do-not-touch)
 - Upload-time hook (resize + convert + recompress new uploads)
 - Database search-and-replace, serialised-data-aware, when filenames change
