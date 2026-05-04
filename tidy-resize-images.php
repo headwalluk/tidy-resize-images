@@ -41,8 +41,9 @@ require_once TRI_PLUGIN_DIR . 'includes/class-image-library.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-image-processor.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-skip-memo.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-trash-manager.php';
-require_once TRI_PLUGIN_DIR . 'includes/class-upload-handler.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-search-replace.php';
+require_once TRI_PLUGIN_DIR . 'includes/class-attachment-processor.php';
+require_once TRI_PLUGIN_DIR . 'includes/class-upload-handler.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-bulk-processor.php';
 
 /**
