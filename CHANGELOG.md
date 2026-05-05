@@ -7,7 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-(Nothing yet.)
+### Added
+- **WP-CLI command surface (M9).** Operators can now drive the plugin
+  from the command line. Three command namespaces are registered,
+  each wrapping the existing service classes — no behavioural
+  changes, just automation reach.
+
+  ```
+  wp tidy-images caps                          # GD / Imagick capability matrix
+  wp tidy-images scan [--limit=N]              # candidate count + sample
+  wp tidy-images process <id>... | --all       # mutating by default;
+                                               # --dry-run for preview;
+                                               # --limit / --batch-size for --all
+  wp tidy-images protect <id>...               # set the do-not-touch flag
+  wp tidy-images unprotect <id>...             # clear the do-not-touch flag
+  wp tidy-images restore <id>                  # restore from trash backup
+
+  wp tidy-images trash list                    # list backup records
+  wp tidy-images trash purge <id> | --all --yes
+
+  wp tidy-images settings get [<key>]          # short or full key form
+  wp tidy-images settings set <key> <value>    # routed through the existing
+                                               # Settings sanitisers
+  ```
+
+  Read-only commands (`scan`, `caps`, `trash list`, `settings get`)
+  support `--format=table|json|csv|yaml` (and `--format=count|ids`
+  where applicable) via the standard `WP_CLI\Utils\format_items()`
+  formatter.
+
+  Dry-run resolution for `process`: explicit `--dry-run` /
+  `--no-dry-run` flags win, otherwise the site's `dry_run` setting
+  is used — same precedence as the daily cron.
+
+  Settings keys are accepted in their short form (`max_edge`,
+  `lossy_target`, `strip_exif`, …) or as the full wp_options name
+  (`tri_limits_max_edge`, …). The short→full map and the matching
+  sanitiser map are hard-coded in `CLI_Settings` so phpcs and IDE
+  jump-to-definition catch typos at review time. Writes go through
+  the existing `Settings::sanitize_*` callbacks so values are
+  clamped or coerced exactly as the admin UI would do.
+
+  New files: `includes/class-cli.php` (top-level subcommands),
+  `includes/class-cli-trash.php`, `includes/class-cli-settings.php`.
+  Registration is one cheap `defined( 'WP_CLI' ) && WP_CLI` guard
+  inside `Plugin::run()` — zero cost for web requests.
 
 ## [0.4.1] - 2026-05-04
 

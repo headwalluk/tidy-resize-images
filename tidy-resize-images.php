@@ -46,6 +46,9 @@ require_once TRI_PLUGIN_DIR . 'includes/class-attachment-processor.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-upload-handler.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-bulk-processor.php';
 require_once TRI_PLUGIN_DIR . 'includes/class-media-library-hooks.php';
+require_once TRI_PLUGIN_DIR . 'includes/class-cli.php';
+require_once TRI_PLUGIN_DIR . 'includes/class-cli-trash.php';
+require_once TRI_PLUGIN_DIR . 'includes/class-cli-settings.php';
 
 /**
  * Bootstrap the plugin: instantiate the orchestrator and register hooks.

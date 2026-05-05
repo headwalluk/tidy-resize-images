@@ -82,6 +82,12 @@ class Plugin {
 		// context, not just admin requests.
 		add_action( TRI_BULK_CRON_HOOK, __NAMESPACE__ . '\\run_bulk_cron' );
 
+		// WP-CLI commands. Cheap conditional means the registration cost is
+		// zero for web requests.
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			CLI::register();
+		}
+
 		if ( is_admin() ) {
 			$settings      = $this->get_settings();
 			$admin_hooks   = $this->get_admin_hooks();

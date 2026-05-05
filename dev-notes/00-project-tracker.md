@@ -2,8 +2,8 @@
 
 **Version:** 0.4.1
 **Last Updated:** 2026-05-05
-**Current Phase:** Milestone 9 (WP-CLI)
-**Overall Progress:** 80% (M11 added — derivative thumbnail rename)
+**Current Phase:** Milestone 10 (Polish) — M9 complete
+**Overall Progress:** 88% (M9 done; M10 + M11 outstanding)
 
 ---
 
@@ -40,19 +40,22 @@ M8b (rest of the Media Library surface, evening session 2):
 - [x] Attachment edit-screen meta box: protected toggle + processing log preview
 - [x] Grid-mode protection toggle via `attachment_fields_to_edit` (with hidden marker for unticked-checkbox detection)
 
-### Up next (Milestone 9 — WP-CLI)
+### M9 — done ✅ (2026-05-05)
 
-Wrap M2–M8 functionality so the operator can run everything from the
-CLI. The interactive Bulk page is the headline workflow; WP-CLI is for
-automation / scripted use / SSH-only ops.
+WP-CLI surface implemented as an autonomous sprint. Three command
+namespaces — top-level, `trash`, and `settings` — wrap the existing
+service classes; no behavioural changes. Read-only commands support
+`--format=table|json|csv|yaml` (+ `count|ids` where applicable);
+`process` defaults to mutating with `--dry-run` / `--no-dry-run`
+overrides on top of the site setting. Settings keys accepted as
+short form or full wp_options name; writes go through the existing
+sanitisers. See CHANGELOG `[Unreleased]` for the full surface.
 
-- [ ] `wp tidy-images scan` — show count_candidates + a sample of the first N
-- [ ] `wp tidy-images process <id|--all>` with `--dry-run`, `--limit`, `--batch-size`
-- [ ] `wp tidy-images protect <id...>` / `unprotect <id...>`
-- [ ] `wp tidy-images restore <id>`
-- [ ] `wp tidy-images trash list | purge`
-- [ ] `wp tidy-images settings get | set`
-- [ ] `wp tidy-images caps` — show detected GD/Imagick capabilities
+### Up next (Milestone 10 — Polish + Milestone 11 — Derivative Thumbnail Rename)
+
+M11 is crucial (every successful conversion silently creates orphan
+derivatives without it) and likely sequences before the final M10
+polish bits. Both blocks are listed below in the Milestones section.
 
 ---
 
@@ -168,18 +171,18 @@ view, the modal grid edit form, and the classic attachment edit screen.
 - [x] Trash page: "Restore & protect" button alongside Restore + Purge
 - [x] Translations: POT + 8 locales tracked in `languages/`
 
-### M9 — WP-CLI
+### M9 — WP-CLI ✅
 Wrap M2–M8 functionality so the operator can run everything from the
 CLI. The interactive Bulk page is the headline workflow; WP-CLI is for
 automation / scripted use / SSH-only ops.
 
-- [ ] `wp tidy-images scan` — show count_candidates + sample of the first N
-- [ ] `wp tidy-images process <id|--all>` with `--dry-run`, `--limit`, `--batch-size`
-- [ ] `wp tidy-images protect <id...>` / `unprotect <id...>`
-- [ ] `wp tidy-images restore <id>`
-- [ ] `wp tidy-images trash list | purge`
-- [ ] `wp tidy-images settings get | set`
-- [ ] `wp tidy-images caps` — show detected GD/Imagick capabilities
+- [x] `wp tidy-images scan` — count_candidates + sample of the first N (`--limit`, `--format=table|json|csv|yaml|count|ids`)
+- [x] `wp tidy-images process <id>... | --all` with `--dry-run` / `--no-dry-run`, `--limit`, `--batch-size`
+- [x] `wp tidy-images protect <id...>` / `unprotect <id...>`
+- [x] `wp tidy-images restore <id>`
+- [x] `wp tidy-images trash list | purge` (`--all --yes` for batch purge)
+- [x] `wp tidy-images settings get | set` (short or full key form; routes through `Settings::sanitize_*`)
+- [x] `wp tidy-images caps` — detected GD/Imagick capabilities
 
 ### M10 — Polish
 - [ ] Status tab: live counts and last-run summary
