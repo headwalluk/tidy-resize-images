@@ -92,12 +92,25 @@
     const totalCandidates = parseInt(candidateCountEl ? candidateCountEl.textContent : '0', 10) || 0;
 
     const totals = { examined: 0, changed: 0, skipped: 0, errored: 0, bytes: 0 };
+    const LOG_CAP = 200;
     let stopped = false;
     let running = false;
+    let batchNum = 0;
 
-    function setStatus(text) {
-      if (statusLine) {
-        statusLine.textContent = text;
+    function setStatus(text, busy) {
+      if (!statusLine) {
+        return;
+      }
+      statusLine.textContent = text;
+      if (busy) {
+        statusLine.appendChild(document.createTextNode(' '));
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner is-active';
+        // WP's .spinner default float/margin makes it sit awkwardly inline; flatten.
+        spinner.style.float = 'none';
+        spinner.style.margin = '0';
+        spinner.style.verticalAlign = 'middle';
+        statusLine.appendChild(spinner);
       }
     }
 
@@ -143,6 +156,7 @@
           '</td>' +
           '<td>' +
           actionBadge(entry.action) +
+          derivativesBadge(entry.derivatives_renamed) +
           '</td>' +
           '<td><code>' +
           escapeHtml(entry.reason || '') +
@@ -153,6 +167,22 @@
         fragment.appendChild(tr);
       });
       logBody.appendChild(fragment);
+
+      // Cap visible rows. Long runs (10k+ candidates) would otherwise
+      // grow the DOM unbounded and chug the browser. The summary
+      // counters and per-attachment _tri_processing_log meta carry the
+      // durable record; this table is a recent-activity tail.
+      while (logBody.children.length > LOG_CAP) {
+        logBody.removeChild(logBody.firstChild);
+      }
+    }
+
+    function derivativesBadge(count) {
+      const n = parseInt(count, 10) || 0;
+      if (n <= 0) {
+        return '';
+      }
+      return ' <span style="display:inline-block;margin-left:6px;padding:1px 6px;font-size:11px;background:#dcdcde;color:#1d2327;border-radius:9px;">+' + n + ' deriv</span>';
     }
 
     function actionBadge(action) {
@@ -186,6 +216,9 @@
       if (dry) {
         formData.append('dry_run', '1');
       }
+
+      batchNum += 1;
+      setStatus(window.triBulk.i18n.processing + ' (batch ' + batchNum + ')', true);
 
       return fetch(window.triBulk.ajaxUrl, { method: 'POST', body: formData, credentials: 'same-origin' })
         .then(function (res) {
@@ -249,8 +282,9 @@
         if (bar) bar.style.width = '0%';
         if (logBody) logBody.innerHTML = '';
         stopped = false;
+        batchNum = 0;
         setRunning(true);
-        setStatus(window.triBulk.i18n.starting);
+        setStatus(window.triBulk.i18n.starting, true);
 
         step(0, 'dry' === mode);
       });
