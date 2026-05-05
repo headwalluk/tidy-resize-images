@@ -222,6 +222,48 @@ class Image_Library {
 	}
 
 	/**
+	 * Resize to exact target dimensions, hard-cropping from centre.
+	 *
+	 * Used by Image_Processor::execute_derivative() when regenerating
+	 * orphan thumbnail sizes — old metadata records dimensions but not
+	 * crop offset, so we mirror WP's own regenerate behaviour and crop
+	 * from centre.
+	 *
+	 * Returns true on success (including no-op when already at the target
+	 * dimensions), false on failure (`get_last_error()` for details).
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param int $width  Target width in px.
+	 * @param int $height Target height in px.
+	 *
+	 * @return bool
+	 */
+	public function resize_to_dims( int $width, int $height ): bool {
+		$this->last_error = null;
+		$success          = false;
+
+		$meta   = $this->get_meta();
+		$editor = $this->get_editor();
+
+		if ( ! empty( $meta ) && ! is_null( $editor ) ) {
+			if ( $meta['width'] === $width && $meta['height'] === $height ) {
+				$success = true;
+			} else {
+				$result = $editor->resize( $width, $height, true );
+
+				if ( is_wp_error( $result ) ) {
+					$this->last_error = $result;
+				} else {
+					$success = true;
+				}
+			}
+		}
+
+		return $success;
+	}
+
+	/**
 	 * Encode the (possibly resized) image to a target MIME at a given quality.
 	 *
 	 * Writes to $tmp_path. Returns the path on success, empty string on

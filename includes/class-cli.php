@@ -414,14 +414,17 @@ class CLI {
 
 			$saved += (int) ( $result['savings_bytes'] ?? 0 );
 
+			$derivs = (int) ( $result['derivatives_renamed'] ?? 0 );
+
 			\WP_CLI::log(
 				sprintf(
-					'#%d %s -> %s (%s) saved=%d',
+					'#%d %s -> %s (%s) saved=%d%s',
 					$id,
 					get_the_title( $id ),
 					$action,
 					(string) $result['reason'],
-					(int) ( $result['savings_bytes'] ?? 0 )
+					(int) ( $result['savings_bytes'] ?? 0 ),
+					$derivs > 0 ? sprintf( ' derivatives=+%d', $derivs ) : ''
 				)
 			);
 
@@ -539,21 +542,23 @@ class CLI {
 	/**
 	 * Determine the dry-run flag for this invocation.
 	 *
-	 * Precedence: --dry-run on > --no-dry-run > site setting.
+	 * Precedence: explicit `--dry-run` / `--no-dry-run` on the command
+	 * line > site setting. WP-CLI's `[--dry-run]` synopsis with the
+	 * accompanying `[--no-dry-run]` documents one flag — `--no-dry-run`
+	 * sets `$assoc_args['dry-run'] = false`, not a separate key — so
+	 * we read the value rather than just checking existence.
 	 *
 	 * @since 0.5.0
 	 *
-	 * @param array<string, string> $assoc_args Associative args.
+	 * @param array<string, mixed> $assoc_args Associative args.
 	 *
 	 * @return bool
 	 */
 	private static function resolve_dry_run( array $assoc_args ): bool {
-		if ( isset( $assoc_args['dry-run'] ) ) {
-			return true;
-		}
+		$flag = \WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', null );
 
-		if ( isset( $assoc_args['no-dry-run'] ) ) {
-			return false;
+		if ( ! is_null( $flag ) ) {
+			return (bool) $flag;
 		}
 
 		return (bool) get_plugin()->get_settings()->get( OPT_BEHAVIOUR_DRY_RUN );

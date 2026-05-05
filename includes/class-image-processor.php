@@ -605,6 +605,98 @@ class Image_Processor {
 	}
 
 	/**
+	 * Regenerate a single derivative at exact target dimensions.
+	 *
+	 * Used by Attachment_Processor when a parent rename (format
+	 * conversion) would otherwise orphan derivative sizes that are no
+	 * longer registered with WP — typically odd theme sizes (`696x461`,
+	 * `534x462`) that exist only in old `_wp_attachment_metadata['sizes']`
+	 * snapshots. Old size entries don't record crop offset, so we mirror
+	 * WP's own regenerate behaviour and crop from centre.
+	 *
+	 * Always emits the derivative — no "is it smaller?" gate. Once the
+	 * parent has been renamed, the equivalent-named derivative *must*
+	 * exist on disk for content references to keep resolving.
+	 *
+	 * Spec shape:
+	 *   array(
+	 *     'width'       => int,    // target width in px
+	 *     'height'      => int,    // target height in px
+	 *     'target_mime' => string, // e.g. 'image/webp'
+	 *     'quality'     => int,    // 1-100
+	 *     'strip_exif'  => bool,
+	 *   )
+	 *
+	 * Returned Result shape mirrors execute() but `committed` is always
+	 * true on success — there is no result-larger discard path here.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param array<string, mixed> $spec        Derivative spec (see shape above).
+	 * @param string               $source_path Absolute path to the (post-rename) parent.
+	 * @param string|null          $tmp_path    Optional temp output path; auto-generated if null.
+	 *
+	 * @return array<string, mixed> Result.
+	 */
+	public function execute_derivative( array $spec, string $source_path, ?string $tmp_path = null ): array {
+		$result = $this->empty_result();
+
+		$width       = (int) ( $spec['width'] ?? 0 );
+		$height      = (int) ( $spec['height'] ?? 0 );
+		$target_mime = (string) ( $spec['target_mime'] ?? '' );
+		$quality     = (int) ( $spec['quality'] ?? 0 );
+		$strip_exif  = (bool) ( $spec['strip_exif'] ?? false );
+
+		if ( $width <= 0 || $height <= 0 || '' === $target_mime ) {
+			$result['reason'] = 'invalid_derivative_spec';
+			return $result;
+		}
+
+		if ( is_null( $tmp_path ) ) {
+			$tmp_path = $this->generate_tmp_path( $target_mime );
+		}
+
+		$lib     = new Image_Library( $source_path, $this->caps );
+		$proceed = true;
+
+		if ( ! $lib->resize_to_dims( $width, $height ) ) {
+			$err              = $lib->get_last_error();
+			$result['error']  = ! is_null( $err ) ? $err->get_error_message() : __( 'Derivative resize failed.', 'tidy-resize-images' );
+			$result['reason'] = 'resize_failed';
+			$proceed          = false;
+		}
+
+		$written = '';
+
+		if ( $proceed ) {
+			$written = $lib->encode( $target_mime, $quality, $strip_exif, $tmp_path );
+
+			if ( '' === $written ) {
+				$err              = $lib->get_last_error();
+				$result['error']  = ! is_null( $err ) ? $err->get_error_message() : __( 'Derivative encode failed.', 'tidy-resize-images' );
+				$result['reason'] = 'encode_failed';
+				$proceed          = false;
+			}
+		}
+
+		$lib->close();
+
+		if ( $proceed ) {
+			$output_lib  = new Image_Library( $written, $this->caps );
+			$output_meta = $output_lib->get_meta();
+			$output_lib->close();
+
+			$result['success']     = true;
+			$result['committed']   = true;
+			$result['output_path'] = $written;
+			$result['output_meta'] = $output_meta;
+			$result['reason']      = 'committed';
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Build an empty Result with default zero values.
 	 *
 	 * @since 0.1.0

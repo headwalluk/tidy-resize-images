@@ -104,6 +104,97 @@ class Trash_Manager {
 	}
 
 	/**
+	 * Augment an existing backup record with the derivatives that a
+	 * pending parent rename will orphan.
+	 *
+	 * Called from `Attachment_Processor::commit()` only on the
+	 * filename-changing branch, after the parent backup is already in
+	 * place. Copies every file referenced by the pre-convert
+	 * `_wp_attachment_metadata` snapshot (every `sizes[*]['file']` plus
+	 * WP's `original_image`) into the trash directory, and stores both
+	 * the metadata snapshot and a basename-keyed map of trash paths back
+	 * onto the existing `_tri_backup` record.
+	 *
+	 * The metadata snapshot is stored in full so `restore()` can write
+	 * it back directly — that's how orphan size entries (theme-registered
+	 * sizes that no longer match WP's currently-registered sizes) survive
+	 * a round-trip without being lost on regeneration.
+	 *
+	 * Idempotent in spirit but not in implementation: calling twice with
+	 * the same metadata would re-copy. Callers are expected to invoke at
+	 * most once per backup record.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param int                  $attachment_id Attachment post ID.
+	 * @param array<string, mixed> $orig_metadata Pre-convert
+	 *                                            `_wp_attachment_metadata`
+	 *                                            snapshot.
+	 *
+	 * @return bool True on success (including the no-derivatives case).
+	 */
+	public static function backup_derivatives( int $attachment_id, array $orig_metadata ): bool {
+		$success  = false;
+		$existing = self::get_backup( $attachment_id );
+
+		if ( ! is_null( $existing ) ) {
+			$current_file = (string) get_attached_file( $attachment_id );
+
+			if ( '' !== $current_file ) {
+				$base_dir    = trailingslashit( dirname( $current_file ) );
+				$derivatives = array();
+				$basenames   = array();
+
+				if ( ! empty( $orig_metadata['sizes'] ) && is_array( $orig_metadata['sizes'] ) ) {
+					foreach ( $orig_metadata['sizes'] as $size ) {
+						$basename = (string) ( $size['file'] ?? '' );
+
+						if ( '' !== $basename ) {
+							$basenames[] = $basename;
+						}
+					}
+				}
+
+				$orig_image_basename = (string) ( $orig_metadata['original_image'] ?? '' );
+
+				if ( '' !== $orig_image_basename ) {
+					$basenames[] = $orig_image_basename;
+				}
+
+				// Dedupe — themes occasionally register two size keys that
+				// map to the same dimensions and therefore the same file.
+				$basenames = array_unique( $basenames );
+
+				foreach ( $basenames as $basename ) {
+					$orig_path = $base_dir . $basename;
+
+					if ( file_exists( $orig_path ) ) {
+						$trash_path = self::trash_path( $attachment_id, $basename );
+
+						wp_mkdir_p( dirname( $trash_path ) );
+
+						if ( @copy( $orig_path, $trash_path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- copy() failure surfaces via the false-return; we just skip the entry.
+							$derivatives[ $basename ] = array(
+								'trash_path' => $trash_path,
+								'orig_path'  => $orig_path,
+							);
+						}
+					}
+				}
+
+				$existing['metadata']    = $orig_metadata;
+				$existing['derivatives'] = $derivatives;
+
+				update_post_meta( $attachment_id, META_BACKUP, $existing );
+
+				$success = true;
+			}
+		}
+
+		return $success;
+	}
+
+	/**
 	 * Restore an attachment to its backed-up state.
 	 *
 	 * Steps:
@@ -152,15 +243,33 @@ class Trash_Manager {
 				if ( @rename( $trash_path, $orig_path ) ) {
 					update_attached_file( $attachment_id, $orig_path );
 
-					if ( ! function_exists( 'wp_create_image_subsizes' ) ) {
-						require_once ABSPATH . 'wp-admin/includes/image.php';
-					}
+					// M11: replay each backed-up derivative back to its
+					// original path. Pre-M11 records have no 'derivatives'
+					// field; the loop is a no-op for those.
+					self::restore_derivatives( $backup );
 
-					// Use wp_create_image_subsizes (not wp_generate_attachment_metadata)
-					// so the wp_generate_attachment_metadata filter does not fire.
-					// Otherwise Upload_Handler's filter would treat the just-restored
-					// file as a fresh upload and immediately re-process it.
-					$metadata = wp_create_image_subsizes( $orig_path, $attachment_id );
+					$snapshot = isset( $backup['metadata'] ) && is_array( $backup['metadata'] )
+						? $backup['metadata']
+						: null;
+
+					if ( ! is_null( $snapshot ) ) {
+						// Use the stored metadata snapshot directly so
+						// theme-registered orphan size entries survive the
+						// round-trip. wp_create_image_subsizes would only
+						// rebuild currently-registered sizes, dropping the
+						// orphans we just restored from disk.
+						$metadata = $snapshot;
+					} else {
+						if ( ! function_exists( 'wp_create_image_subsizes' ) ) {
+							require_once ABSPATH . 'wp-admin/includes/image.php';
+						}
+
+						// Use wp_create_image_subsizes (not wp_generate_attachment_metadata)
+						// so the wp_generate_attachment_metadata filter does not fire.
+						// Otherwise Upload_Handler's filter would treat the just-restored
+						// file as a fresh upload and immediately re-process it.
+						$metadata = wp_create_image_subsizes( $orig_path, $attachment_id );
+					}
 
 					if ( is_array( $metadata ) ) {
 						wp_update_attachment_metadata( $attachment_id, $metadata );
@@ -224,6 +333,18 @@ class Trash_Manager {
 
 			if ( '' !== $trash_path && file_exists( $trash_path ) ) {
 				wp_delete_file( $trash_path );
+			}
+
+			$derivatives = isset( $backup['derivatives'] ) && is_array( $backup['derivatives'] )
+				? $backup['derivatives']
+				: array();
+
+			foreach ( $derivatives as $entry ) {
+				$d_trash = is_array( $entry ) ? (string) ( $entry['trash_path'] ?? '' ) : '';
+
+				if ( '' !== $d_trash && file_exists( $d_trash ) ) {
+					wp_delete_file( $d_trash );
+				}
 			}
 
 			delete_post_meta( $attachment_id, META_BACKUP );
@@ -336,6 +457,50 @@ class Trash_Manager {
 		return trailingslashit( $upload_dir['basedir'] )
 			. self::TRASH_DIRNAME . '/' . $year . '/' . $month . '/'
 			. $attachment_id . '-' . $now . '-' . $basename;
+	}
+
+	/**
+	 * Replay backed-up derivative files from trash to their original
+	 * upload-tree paths.
+	 *
+	 * Reads the M11+ `derivatives` map on the backup record (basename
+	 * keyed → `{trash_path, orig_path}`) and renames each one back into
+	 * place. Missing or invalid entries are skipped silently — restore
+	 * is best-effort for derivatives, since the parent file (which is
+	 * what content references most often hit) has already been put back
+	 * by the caller.
+	 *
+	 * Pre-M11 backup records have no `derivatives` field; the loop is a
+	 * no-op for those.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param array<string, mixed> $backup Backup record.
+	 *
+	 * @return void
+	 */
+	private static function restore_derivatives( array $backup ): void {
+		$derivatives = isset( $backup['derivatives'] ) && is_array( $backup['derivatives'] )
+			? $backup['derivatives']
+			: array();
+
+		foreach ( $derivatives as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$trash_path = (string) ( $entry['trash_path'] ?? '' );
+			$orig_path  = (string) ( $entry['orig_path'] ?? '' );
+
+			if ( '' === $trash_path || '' === $orig_path || ! file_exists( $trash_path ) ) {
+				continue;
+			}
+
+			wp_mkdir_p( dirname( $orig_path ) );
+
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.rename_rename -- Both paths are inside wp-content/uploads/; rename failure for a single derivative is non-fatal.
+			@rename( $trash_path, $orig_path );
+		}
 	}
 
 	/**

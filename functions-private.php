@@ -58,15 +58,7 @@ function now_formatted(): string {
  * @return string
  */
 function compute_final_path( string $source_path, string $target_mime ): string {
-	$ext_map = array(
-		MIME_JPEG => 'jpg',
-		MIME_PNG  => 'png',
-		MIME_WEBP => 'webp',
-		MIME_AVIF => 'avif',
-		MIME_GIF  => 'gif',
-	);
-
-	$target_ext = $ext_map[ $target_mime ] ?? '';
+	$target_ext = mime_to_extension( $target_mime );
 
 	if ( '' === $target_ext ) {
 		return $source_path;
@@ -84,6 +76,59 @@ function compute_final_path( string $source_path, string $target_mime ): string 
 	}
 
 	return $pathinfo['dirname'] . '/' . $pathinfo['filename'] . '.' . $target_ext;
+}
+
+/**
+ * Map a MIME type to the file extension we use on disk.
+ *
+ * Returns an empty string for MIMEs we don't write — callers fall back
+ * to leaving the path unchanged.
+ *
+ * @since 0.5.0
+ *
+ * @param string $mime e.g. 'image/webp'.
+ *
+ * @return string e.g. 'webp', or '' if unmapped.
+ */
+function mime_to_extension( string $mime ): string {
+	$ext_map = array(
+		MIME_JPEG => 'jpg',
+		MIME_PNG  => 'png',
+		MIME_WEBP => 'webp',
+		MIME_AVIF => 'avif',
+		MIME_GIF  => 'gif',
+	);
+
+	return (string) ( $ext_map[ $mime ] ?? '' );
+}
+
+/**
+ * Swap the extension on a basename or path.
+ *
+ * Used by the M11 derivative-rename path when computing the new
+ * basename for an orphan derivative: e.g. `foo-300x200.jpg` becomes
+ * `foo-300x200.webp` for `$new_ext = 'webp'`. Returns the input
+ * unchanged when there is no extension to swap.
+ *
+ * @since 0.5.0
+ *
+ * @param string $path    Basename or path with extension.
+ * @param string $new_ext New extension, sans dot (e.g. 'webp').
+ *
+ * @return string
+ */
+function swap_extension( string $path, string $new_ext ): string {
+	$result = $path;
+
+	if ( '' !== $new_ext ) {
+		$dot = strrpos( $path, '.' );
+
+		if ( false !== $dot ) {
+			$result = substr( $path, 0, $dot ) . '.' . $new_ext;
+		}
+	}
+
+	return $result;
 }
 
 /**

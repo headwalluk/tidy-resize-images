@@ -242,10 +242,20 @@ class Attachment_Processor {
 	 * @return array<string, mixed>
 	 */
 	private function commit( int $id, string $current_file, array $exec, array $plan, array $orig_metadata, bool $backup_enabled, Settings $settings, array $result ): array {
-		$output_path = (string) $exec['output_path'];
-		$output_mime = (string) ( $exec['output_meta']['mime'] ?? $plan['target_mime'] ?? '' );
-		$source_mime = (string) ( $plan['source_meta']['mime'] ?? '' );
-		$final_path  = compute_final_path( $current_file, $output_mime );
+		$output_path      = (string) $exec['output_path'];
+		$output_mime      = (string) ( $exec['output_meta']['mime'] ?? $plan['target_mime'] ?? '' );
+		$source_mime      = (string) ( $plan['source_meta']['mime'] ?? '' );
+		$final_path       = compute_final_path( $current_file, $output_mime );
+		$filename_changed = ( $output_mime !== $source_mime );
+
+		// On the rename branch, snapshot every old derivative file into
+		// trash before they're wiped. This lets `Trash_Manager::restore()`
+		// put them back on disk and lets us write the old metadata back
+		// directly — preserving theme-registered orphan size entries that
+		// WP would otherwise drop on regeneration.
+		if ( $filename_changed && $backup_enabled ) {
+			Trash_Manager::backup_derivatives( $id, $orig_metadata );
+		}
 
 		// Stale intermediates — derived from the old format / dimensions.
 		delete_intermediate_files( $current_file, $orig_metadata );
@@ -267,8 +277,6 @@ class Attachment_Processor {
 		}
 
 		update_attached_file( $id, $final_path );
-
-		$filename_changed = ( $output_mime !== $source_mime );
 
 		if ( $filename_changed ) {
 			wp_update_post(
@@ -303,6 +311,22 @@ class Attachment_Processor {
 			$new_meta = array();
 		}
 
+		// Gap-fill: regenerate any size that lived in the old metadata but
+		// is no longer registered with WP, so theme-registered orphan
+		// derivatives don't 404 after a format conversion.
+		$derivatives_renamed = 0;
+
+		if ( $filename_changed && ! empty( $orig_metadata['sizes'] ) && ! empty( $new_meta ) ) {
+			$gap_result = $this->fill_orphan_derivatives( $final_path, $output_mime, $plan, $orig_metadata, $new_meta );
+			$new_meta   = $gap_result['new_meta'];
+
+			$derivatives_renamed = $gap_result['count'];
+
+			if ( $gap_result['count'] > 0 ) {
+				wp_update_attachment_metadata( $id, $new_meta );
+			}
+		}
+
 		// Search-replace runs unconditionally when the filename changed —
 		// no-op for fresh uploads (no DB references yet); essential for
 		// existing attachments with content references.
@@ -313,15 +337,116 @@ class Attachment_Processor {
 
 		update_post_meta( $id, META_PROCESSED_AT, now_formatted() );
 
-		$result['action']          = 'committed';
-		$result['reason']          = 'committed';
-		$result['savings_bytes']   = (int) ( $exec['savings_bytes'] ?? 0 );
-		$result['savings_percent'] = (float) ( $exec['savings_percent'] ?? 0.0 );
-		$result['output_meta']     = $new_meta;
+		$result['action']              = 'committed';
+		$result['reason']              = 'committed';
+		$result['savings_bytes']       = (int) ( $exec['savings_bytes'] ?? 0 );
+		$result['savings_percent']     = (float) ( $exec['savings_percent'] ?? 0.0 );
+		$result['output_meta']         = $new_meta;
+		$result['derivatives_renamed'] = $derivatives_renamed;
 
 		$this->record_log( $id, $result );
 
 		return $result;
+	}
+
+	/**
+	 * Regenerate orphan derivative sizes that wp_create_image_subsizes
+	 * dropped because the size key is no longer registered.
+	 *
+	 * Iterates the OLD metadata snapshot (not the currently-registered
+	 * size list) — that's the entire point: themes that registered odd
+	 * sizes (`696x461`, `534x462`) and have since deregistered them
+	 * still have content references to those filenames. Without this
+	 * step those references would 404 after a format conversion.
+	 *
+	 * For each old size_key not present in the new metadata:
+	 *   1. Compute the expected new basename (old basename with new ext).
+	 *   2. Regenerate the file at the old recorded width × height via
+	 *      `Image_Processor::execute_derivative()`. Hard-cropped from
+	 *      centre; old metadata has no crop offset.
+	 *   3. Move the temp output into the uploads directory.
+	 *   4. Inject a new entry into `$new_meta['sizes'][$size_key]` so
+	 *      `Search_Replace::rewrite_attachment_rename()` pairs the URL
+	 *      rewrite correctly.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param string               $final_path    Absolute path to the renamed parent.
+	 * @param string               $output_mime   Target MIME (e.g. 'image/webp').
+	 * @param array<string, mixed> $plan          Plan from Image_Processor (for quality + strip_exif).
+	 * @param array<string, mixed> $orig_metadata Pre-rename metadata snapshot.
+	 * @param array<string, mixed> $new_meta      Post-rename metadata from wp_create_image_subsizes.
+	 *
+	 * @return array{new_meta: array<string, mixed>, count: int}
+	 */
+	private function fill_orphan_derivatives( string $final_path, string $output_mime, array $plan, array $orig_metadata, array $new_meta ): array {
+		$base_dir   = trailingslashit( dirname( $final_path ) );
+		$new_ext    = mime_to_extension( $output_mime );
+		$count      = 0;
+		$processor  = new Image_Processor();
+		$strip_exif = (bool) ( $plan['strip_exif'] ?? false );
+		$quality    = (int) ( $plan['quality'] ?? 0 );
+
+		$new_sizes = isset( $new_meta['sizes'] ) && is_array( $new_meta['sizes'] ) ? $new_meta['sizes'] : array();
+
+		foreach ( $orig_metadata['sizes'] as $size_key => $old_size ) {
+			if ( isset( $new_sizes[ $size_key ] ) ) {
+				continue;
+			}
+
+			$old_basename = (string) ( $old_size['file'] ?? '' );
+			$width        = (int) ( $old_size['width'] ?? 0 );
+			$height       = (int) ( $old_size['height'] ?? 0 );
+
+			if ( '' === $old_basename || $width <= 0 || $height <= 0 ) {
+				continue;
+			}
+
+			$new_basename = swap_extension( $old_basename, $new_ext );
+			$new_path     = $base_dir . $new_basename;
+
+			$spec = array(
+				'width'       => $width,
+				'height'      => $height,
+				'target_mime' => $output_mime,
+				'quality'     => $quality,
+				'strip_exif'  => $strip_exif,
+			);
+
+			$exec = $processor->execute_derivative( $spec, $final_path );
+
+			if ( ! $exec['success'] ) {
+				continue;
+			}
+
+			$tmp_output = (string) $exec['output_path'];
+
+			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged,WordPress.WP.AlternativeFunctions.rename_rename -- Both paths under wp-content/uploads/; rename failure is handled by the file_exists check below.
+			if ( ! @rename( $tmp_output, $new_path ) || ! file_exists( $new_path ) ) {
+				if ( file_exists( $tmp_output ) ) {
+					wp_delete_file( $tmp_output );
+				}
+
+				continue;
+			}
+
+			$bytes_raw = filesize( $new_path );
+
+			$new_meta['sizes'][ $size_key ] = array(
+				'file'      => $new_basename,
+				'width'     => $width,
+				'height'    => $height,
+				'mime-type' => $output_mime,
+				'filesize'  => is_int( $bytes_raw ) ? $bytes_raw : 0,
+			);
+
+			++$count;
+		}
+
+		return array(
+			'new_meta' => $new_meta,
+			'count'    => $count,
+		);
 	}
 
 	/**
@@ -387,13 +512,14 @@ class Attachment_Processor {
 	 */
 	private function record_log( int $id, array $result ): void {
 		$entry = array(
-			'at'              => now_formatted(),
-			'action'          => (string) $result['action'],
-			'reason'          => (string) $result['reason'],
-			'source_mime'     => (string) $result['source_mime'],
-			'target_mime'     => (string) $result['target_mime'],
-			'savings_bytes'   => (int) $result['savings_bytes'],
-			'savings_percent' => (float) $result['savings_percent'],
+			'at'                  => now_formatted(),
+			'action'              => (string) $result['action'],
+			'reason'              => (string) $result['reason'],
+			'source_mime'         => (string) $result['source_mime'],
+			'target_mime'         => (string) $result['target_mime'],
+			'savings_bytes'       => (int) $result['savings_bytes'],
+			'savings_percent'     => (float) $result['savings_percent'],
+			'derivatives_renamed' => (int) ( $result['derivatives_renamed'] ?? 0 ),
 		);
 
 		$existing = get_post_meta( $id, META_PROCESSING_LOG, true );
@@ -419,16 +545,17 @@ class Attachment_Processor {
 	 */
 	private function empty_result( int $id ): array {
 		return array(
-			'id'              => $id,
-			'action'          => 'skipped',
-			'reason'          => '',
-			'source_mime'     => '',
-			'target_mime'     => '',
-			'quality'         => 0,
-			'savings_bytes'   => 0,
-			'savings_percent' => 0.0,
-			'output_meta'     => array(),
-			'error'           => '',
+			'id'                  => $id,
+			'action'              => 'skipped',
+			'reason'              => '',
+			'source_mime'         => '',
+			'target_mime'         => '',
+			'quality'             => 0,
+			'savings_bytes'       => 0,
+			'savings_percent'     => 0.0,
+			'derivatives_renamed' => 0,
+			'output_meta'         => array(),
+			'error'               => '',
 		);
 	}
 }

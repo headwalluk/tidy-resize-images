@@ -221,15 +221,16 @@ class Bulk_Processor {
 		}
 
 		return array(
-			'id'              => $id,
-			'title'           => $title,
-			'action'          => (string) $result['action'],
-			'reason'          => (string) $result['reason'],
-			'savings_bytes'   => (int) ( $result['savings_bytes'] ?? 0 ),
-			'savings_percent' => (float) ( $result['savings_percent'] ?? 0.0 ),
-			'target_mime'     => (string) ( $result['target_mime'] ?? '' ),
-			'quality'         => (int) ( $result['quality'] ?? 0 ),
-			'error'           => (string) ( $result['error'] ?? '' ),
+			'id'                  => $id,
+			'title'               => $title,
+			'action'              => (string) $result['action'],
+			'reason'              => (string) $result['reason'],
+			'savings_bytes'       => (int) ( $result['savings_bytes'] ?? 0 ),
+			'savings_percent'     => (float) ( $result['savings_percent'] ?? 0.0 ),
+			'target_mime'         => (string) ( $result['target_mime'] ?? '' ),
+			'quality'             => (int) ( $result['quality'] ?? 0 ),
+			'derivatives_renamed' => (int) ( $result['derivatives_renamed'] ?? 0 ),
+			'error'               => (string) ( $result['error'] ?? '' ),
 		);
 	}
 
