@@ -1,9 +1,9 @@
 # Project Tracker
 
-**Version:** 0.4.1
+**Version:** 0.5.0
 **Last Updated:** 2026-05-05
-**Current Phase:** Milestone 10 (Polish) — M9 complete
-**Overall Progress:** 88% (M9 done; M10 + M11 outstanding)
+**Current Phase:** Milestone 10 (Polish) — M9 + M11 complete
+**Overall Progress:** 94% (M9 + M11 done; M10 outstanding)
 
 ---
 
@@ -51,11 +51,32 @@ overrides on top of the site setting. Settings keys accepted as
 short form or full wp_options name; writes go through the existing
 sanitisers. See CHANGELOG `[Unreleased]` for the full surface.
 
-### Up next (Milestone 10 — Polish + Milestone 11 — Derivative Thumbnail Rename)
+### M11 — done ✅ (2026-05-05)
 
-M11 is crucial (every successful conversion silently creates orphan
-derivatives without it) and likely sequences before the final M10
-polish bits. Both blocks are listed below in the Milestones section.
+Derivative-thumbnail rename shipped ahead of the M10 polish round
+because every successful format conversion was silently leaving
+orphan derivatives on disk. New surfaces:
+
+- `Image_Processor::execute_derivative( $spec, $source_path )` — focused
+  method to regenerate a single derivative at exact width × height,
+  hard-cropped from centre, encoded at the target MIME.
+- `Attachment_Processor::commit()` gap-fill — after
+  `wp_create_image_subsizes`, regenerate any size that lived in the
+  pre-rename metadata snapshot but is no longer registered with WP.
+  Inject under the original size key so search-replace pairs the URL
+  rewrite cleanly.
+- `Trash_Manager::backup_derivatives()` — copy every old derivative
+  into trash and stash the full pre-rename metadata snapshot on the
+  `_tri_backup` record.
+- `Trash_Manager::restore()` — replay derivative files from trash; if
+  a metadata snapshot is present, write it back directly so orphan
+  size entries survive the round-trip.
+- Bulk page log + WP-CLI `process` summary — "+N deriv" badge / count.
+
+### Up next (Milestone 10 — Polish)
+
+M9 + M11 are done. Remaining polish is listed in the Milestones
+section below.
 
 ---
 
@@ -192,11 +213,11 @@ automation / scripted use / SSH-only ops.
 - [ ] Stale trash records: defensive cleanup on the Trash page. ~20 backup records on the dev site have `path`/`orig_path` strings missing the docroot prefix (`/web/...` instead of `/var/www/.../web/...`) — likely written when WP was returning shorter paths. They `restore_failed` cleanly today, but the operator can't recover from them. Two reasonable fixes: (a) detect and offer a one-click "purge stale record" button per row, (b) auto-heal by retrying with the docroot-prefixed path before declaring failure. Lean toward (a) — simpler and keeps the operator in control.
 - [ ] DRY the four `now_formatted()` copies (Trash_Manager, Skip_Memo, etc. still hold private versions; functions-private.php has the canonical helper since 0.3.0)
 
-### M11 — Derivative Thumbnail Rename
+### M11 — Derivative Thumbnail Rename ✅ (2026-05-05)
 
-**Crucial, not nice-to-have.** Should likely ship before the final M10
-polish round — every successful format conversion silently creates
-technical debt without it.
+**Crucial, not nice-to-have.** Shipped ahead of M10 polish — every
+successful format conversion was silently creating technical debt
+without it.
 
 When a parent file's extension changes (e.g. `foo.jpg` → `foo.webp`),
 the old sized derivatives on disk become orphans:
@@ -244,20 +265,31 @@ the old sized derivatives on disk become orphans:
 
 **Tasks:**
 
-- [ ] Snapshot pre-convert sizes in `Attachment_Processor` (only when the planned action is `convert` and the target MIME differs from source)
-- [ ] Per-size regenerate via `Image_Processor` (new method, or reuse `execute()` with an explicit-dimensions plan)
-- [ ] Per-derivative `Search_Replace` rewrite
-- [ ] Per-derivative trash backup; extend `_tri_backup` schema to carry a derivative list
-- [ ] Restore path: reverse the per-derivative rewrites and restore each derivative file
-- [ ] Bulk page log: one collapsed summary per row, e.g. `+9 derivatives renamed`
-- [ ] WP-CLI dry-run output: preview the per-derivative changes
-- [ ] Docs note on hard-cropped sizes resize-from-centre behaviour
+- [x] Snapshot pre-convert sizes in `Attachment_Processor` (only when the planned action is `convert` and the target MIME differs from source) — done via the existing `$orig_metadata` parameter to `commit()`
+- [x] Per-size regenerate via `Image_Processor` — `execute_derivative( $spec, $source_path )` with explicit width/height/mime/quality
+- [x] Per-derivative `Search_Replace` rewrite — handled by the existing `rewrite_attachment_rename` once the gap-fill step injects orphans into the new metadata under their original size keys
+- [x] Per-derivative trash backup; extend `_tri_backup` schema — `Trash_Manager::backup_derivatives()` writes a basename-keyed `derivatives` map plus the full `metadata` snapshot
+- [x] Restore path: replay each derivative file from trash; if the backup carries a `metadata` snapshot, write it back directly (preserves orphan size entries on the round-trip)
+- [x] Bulk page log: `+N deriv` pill appended to the action cell when `derivatives_renamed > 0`
+- [x] WP-CLI `process` summary line: appends `derivatives=+N` when > 0
+- [x] Docs note on hard-cropped sizes resize-from-centre behaviour — see Notes for Development → "Derivative thumbnail rename (M11)"
 
 ---
 
 ## Technical Debt
 
-_None yet. Track decisions here when we trade short-term implementation for follow-up work._
+- **M11 size-key collision corner case.** When a registered size's
+  *dimensions* change after an attachment was first uploaded (e.g. a
+  theme bumps `medium` from 250×200 to 300×240), `wp_create_image_subsizes`
+  on the renamed parent produces the new dimensions under the same
+  size key, so the M11 gap-fill pass never fires for that key. Old
+  content references to the old dimensions then point at filenames
+  that don't exist after the rename. Pre-M11 behaviour was already
+  broken in this case; M11 makes it no worse. Future fix: detect
+  width/height divergence between old and new metadata under the same
+  size key and regenerate at the old dimensions under a synthetic
+  size key. Low priority — operators rarely change registered size
+  dimensions mid-life.
 
 ---
 
@@ -404,6 +436,40 @@ array(
     'reason'      => 'auto_alpha_target',  // for logging
 )
 ```
+
+### Derivative thumbnail rename (M11)
+
+When a parent's extension changes during a convert (`foo.jpg` → `foo.webp`),
+the orchestrator runs a gap-fill pass after `wp_create_image_subsizes`:
+any size present in the **pre-rename** `_wp_attachment_metadata` snapshot
+but absent from the regenerated metadata is regenerated via
+`Image_Processor::execute_derivative()` and injected back into the
+metadata under its original size key. This keeps content references
+to historically-registered theme sizes (`foo-696x461.webp` etc.) live
+even after themes have deregistered the size.
+
+**Hard-cropped sizes — resize from centre.** Old metadata records
+dimensions but not crop offset or focus point. `execute_derivative()`
+therefore always crops from centre, matching WordPress's own
+`wp_create_image_subsizes` behaviour for hard-cropped registered sizes.
+Operators with focus-point requirements should mark affected
+attachments as protected (`_tri_protected`) before bulk runs.
+
+**Backup record growth.** When the rename branch fires (filename
+will change) and `backup_originals` is on, `Trash_Manager::backup_derivatives()`
+copies every old derivative file into the trash directory and records
+two new fields on `_tri_backup`:
+
+- `metadata` — the full pre-convert `_wp_attachment_metadata` snapshot
+- `derivatives` — a basename-keyed map of `{trash_path, orig_path}`
+  for every old derivative that made it into trash
+
+`Trash_Manager::restore()` consumes both: derivatives are renamed back
+into place, and if `metadata` is present it's written back directly via
+`wp_update_attachment_metadata()` instead of regenerated via
+`wp_create_image_subsizes()`. The direct-write path is what makes
+orphan size entries survive a round-trip — regeneration would lose
+them.
 
 ### HEIC handling
 

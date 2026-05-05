@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Tidy Resize Images 0.4.0\n"
+"Project-Id-Version: Tidy Resize Images 0.5.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/tidy-resize-images\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-04T19:19:05+00:00\n"
+"POT-Creation-Date: 2026-05-05T19:54:46+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: tidy-resize-images\n"
@@ -600,11 +600,11 @@ msgstr ""
 msgid "File is not a recognised image: %s"
 msgstr ""
 
-#: includes/class-image-library.php:257
+#: includes/class-image-library.php:299
 msgid "Image editor returned no path."
 msgstr ""
 
-#: includes/class-image-library.php:266
+#: includes/class-image-library.php:308
 msgid "Encoded successfully but EXIF strip failed."
 msgstr ""
 
@@ -614,6 +614,14 @@ msgstr ""
 
 #: includes/class-image-processor.php:568
 msgid "Encode failed."
+msgstr ""
+
+#: includes/class-image-processor.php:664
+msgid "Derivative resize failed."
+msgstr ""
+
+#: includes/class-image-processor.php:676
+msgid "Derivative encode failed."
 msgstr ""
 
 #: includes/class-media-library-hooks.php:67

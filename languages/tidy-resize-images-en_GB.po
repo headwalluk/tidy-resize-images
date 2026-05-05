@@ -579,11 +579,11 @@ msgstr "Source image is not readable: %s"
 msgid "File is not a recognised image: %s"
 msgstr "File is not a recognised image: %s"
 
-#: includes/class-image-library.php:257
+#: includes/class-image-library.php:299
 msgid "Image editor returned no path."
 msgstr "Image editor returned no path."
 
-#: includes/class-image-library.php:266
+#: includes/class-image-library.php:308
 msgid "Encoded successfully but EXIF strip failed."
 msgstr "Encoded successfully but EXIF strip failed."
 
@@ -750,3 +750,11 @@ msgstr "Restore failed. The original file may be missing from the trash director
 #: includes/class-media-library-hooks.php:913
 msgid "Tidy could not complete that action. Please refresh the page and try again."
 msgstr "Tidy could not complete that action. Please refresh the page and try again."
+
+#: includes/class-image-processor.php:664
+msgid "Derivative resize failed."
+msgstr "Derivative resize failed."
+
+#: includes/class-image-processor.php:676
+msgid "Derivative encode failed."
+msgstr "Derivative encode failed."

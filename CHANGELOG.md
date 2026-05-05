@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-05
+
+A meaty release combining a full WP-CLI surface, the derivative-
+thumbnail-rename feature that closes a long-standing orphan problem
+on format conversions, and a round of bulk-page UX fixes driven by
+real-world test-bed runs against a 10k+ attachment site.
+
 ### Added
-- **WP-CLI command surface (M9).** Operators can now drive the plugin
-  from the command line. Three command namespaces are registered,
-  each wrapping the existing service classes — no behavioural
-  changes, just automation reach.
+- **WP-CLI command surface.** Operators can now drive the plugin from
+  the command line. Three command namespaces are registered, each
+  wrapping the existing service classes — no behavioural changes,
+  just automation reach.
 
   ```
   wp tidy-images caps                          # GD / Imagick capability matrix
@@ -36,22 +43,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   where applicable) via the standard `WP_CLI\Utils\format_items()`
   formatter.
 
-  Dry-run resolution for `process`: explicit `--dry-run` /
-  `--no-dry-run` flags win, otherwise the site's `dry_run` setting
-  is used — same precedence as the daily cron.
-
   Settings keys are accepted in their short form (`max_edge`,
   `lossy_target`, `strip_exif`, …) or as the full wp_options name
-  (`tri_limits_max_edge`, …). The short→full map and the matching
-  sanitiser map are hard-coded in `CLI_Settings` so phpcs and IDE
-  jump-to-definition catch typos at review time. Writes go through
-  the existing `Settings::sanitize_*` callbacks so values are
-  clamped or coerced exactly as the admin UI would do.
+  (`tri_limits_max_edge`, …). Writes go through the existing
+  `Settings::sanitize_*` callbacks so values are clamped or coerced
+  exactly as the admin UI would do.
 
-  New files: `includes/class-cli.php` (top-level subcommands),
-  `includes/class-cli-trash.php`, `includes/class-cli-settings.php`.
-  Registration is one cheap `defined( 'WP_CLI' ) && WP_CLI` guard
-  inside `Plugin::run()` — zero cost for web requests.
+  See [`docs/wp-cli.md`](docs/wp-cli.md) for the full reference.
+
+- **Derivative thumbnail rename.** Format conversions no longer
+  silently orphan derivatives whose theme-registered size has since
+  been deregistered. After `wp_create_image_subsizes` regenerates
+  currently-registered sizes against the new parent, a gap-fill pass
+  iterates the pre-rename `_wp_attachment_metadata['sizes']` snapshot
+  and regenerates any missing entries via the new
+  `Image_Processor::execute_derivative()` method. Each orphan is
+  injected back into the metadata under its original size key so
+  search-replace pairs the URL rewrite cleanly.
+
+  Hard-cropped sizes resize from centre, matching WordPress's own
+  `wp_create_image_subsizes` behaviour — old metadata stores
+  dimensions but not crop offset or focus point.
+
+  The trash-backup record grows two fields when the rename branch
+  fires:
+    - `metadata` — full pre-convert metadata snapshot
+    - `derivatives` — basename-keyed map of `{trash_path, orig_path}`
+      for every old derivative copied into trash
+
+  `Trash_Manager::restore()` consumes both: derivatives are replayed
+  back into place and the metadata snapshot is written directly via
+  `wp_update_attachment_metadata()` so orphan size entries survive
+  the round-trip. Pre-M11 backup records (no `metadata`/`derivatives`
+  fields) still restore via the existing `wp_create_image_subsizes`
+  path.
+
+  Bulk page log: a "+N deriv" pill appears next to the action badge
+  when a row regenerated orphan derivatives. WP-CLI `process` summary
+  appends `derivatives=+N` for the same case.
+
+  New helpers: `mime_to_extension()` and `swap_extension()` in
+  `functions-private.php`. The mime-to-extension map that previously
+  lived inline in `compute_final_path()` is now shared.
+
+- **Bulk page in-flight indicator.** While an AJAX batch is in flight
+  (typically 30–60s for a real run on slower images), the status line
+  now shows `Processing… (batch N)` with the standard WordPress admin
+  spinner. Previously the page sat silent between batch responses,
+  making operators reasonably suspect a hang and click Stop.
+
+- **Bulk page log row cap.** The log table now keeps only the most
+  recent 200 rows; older rows are pruned FIFO as new ones arrive.
+  Long bulk runs against large libraries (think 10k+ candidates) would
+  otherwise grow the DOM unbounded and visibly chug the browser. The
+  summary counters at the top carry the running totals; per-attachment
+  `_tri_processing_log` postmeta carries the durable per-image record.
+
+- **Operator-facing documentation.** New [`docs/`](docs/) directory
+  with use-case guides for new sites and inherited-site bulk runs,
+  the full WP-CLI reference, and a hooks-and-filters guide covering
+  the `tri_format_decision` extension point.
+
+### Fixed
+- **`wp tidy-images process --no-dry-run` was being read as `--dry-run`.**
+  WP-CLI's `[--no-foo]` synopsis sets `$assoc_args['foo'] = false` when
+  the user passes `--no-foo` (it doesn't create a separate
+  `'no-foo'` key), so the previous `isset()` check treated `--no-dry-run`
+  as if `--dry-run` had been passed and quietly forced dry-run mode.
+  Now reads the flag value via `WP_CLI\Utils\get_flag_value()`.
 
 ## [0.4.1] - 2026-05-04
 

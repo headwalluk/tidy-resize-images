@@ -17,3 +17,7 @@ vendor/
 
 # Generated phpcs reports.
 phpcs-report.*
+
+# Local test-bed tooling and snapshots — host-specific, not for the public repo.
+dev-scripts/
+backups/
