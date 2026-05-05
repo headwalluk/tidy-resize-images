@@ -24,3 +24,11 @@ with originals safely backed up and a dry-run preview.
 - [docs/use-cases/inherited-site.md](docs/use-cases/inherited-site.md) — bulk-update workflow for sites full of historical oversized images
 - [docs/wp-cli.md](docs/wp-cli.md) — full WP-CLI command reference
 - [docs/hooks-and-filters.md](docs/hooks-and-filters.md) — extension points (`tri_format_decision` and others)
+
+## License
+
+GPLv2 or later. See [LICENSE](LICENSE) for the full text.
+
+## Author
+
+Paul Faulkner — [headwall-hosting.com](https://headwall-hosting.com/)
