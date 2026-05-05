@@ -1,9 +1,9 @@
 # Project Tracker
 
 **Version:** 0.4.1
-**Last Updated:** 2026-05-04
+**Last Updated:** 2026-05-05
 **Current Phase:** Milestone 9 (WP-CLI)
-**Overall Progress:** 88%
+**Overall Progress:** 80% (M11 added — derivative thumbnail rename)
 
 ---
 
@@ -188,6 +188,67 @@ automation / scripted use / SSH-only ops.
 - [ ] Translation files scaffolding (build script for re-running the DeepL tool against current strings)
 - [ ] Stale trash records: defensive cleanup on the Trash page. ~20 backup records on the dev site have `path`/`orig_path` strings missing the docroot prefix (`/web/...` instead of `/var/www/.../web/...`) — likely written when WP was returning shorter paths. They `restore_failed` cleanly today, but the operator can't recover from them. Two reasonable fixes: (a) detect and offer a one-click "purge stale record" button per row, (b) auto-heal by retrying with the docroot-prefixed path before declaring failure. Lean toward (a) — simpler and keeps the operator in control.
 - [ ] DRY the four `now_formatted()` copies (Trash_Manager, Skip_Memo, etc. still hold private versions; functions-private.php has the canonical helper since 0.3.0)
+
+### M11 — Derivative Thumbnail Rename
+
+**Crucial, not nice-to-have.** Should likely ship before the final M10
+polish round — every successful format conversion silently creates
+technical debt without it.
+
+When a parent file's extension changes (e.g. `foo.jpg` → `foo.webp`),
+the old sized derivatives on disk become orphans:
+
+- Content references (`foo-485x360.jpg`) still resolve — the old JPGs
+  are still on disk — so nothing visibly breaks today.
+- But `_wp_attachment_metadata` no longer tracks them, so Force
+  Regenerate Thumbnails / `wp media regenerate` won't manage them.
+- A subsequent regenerate produces a parallel `.webp` set alongside the
+  orphan `.jpg` set — actively *polluting* the upload tree we're
+  meant to be tidying.
+
+**Logic** (slots into the existing convert flow in `Attachment_Processor`):
+
+1. Snapshot the old `_wp_attachment_metadata['sizes']` array (and
+   `original_image` if set) **before** converting the parent.
+2. Convert parent — existing flow.
+3. For each old size entry `[file, width, height, mime-type]`, ask
+   `Image_Processor` to produce a `WxH` derivative from the **new**
+   parent, encoded at the new target MIME. Output: `foo-WxH.<new-ext>`.
+4. `Search_Replace` old derivative URL → new derivative URL across
+   the configured scope (per-size, or batched).
+5. `Trash_Manager::backup()` each old `.jpg` derivative. Honours
+   `backup_originals` setting like the parent path.
+6. Write the rebuilt `sizes` array to `_wp_attachment_metadata`.
+
+**Key design points:**
+
+- **Iterate the OLD metadata snapshot, not currently-registered sizes.**
+  The whole point is themes that registered odd sizes (`696x461`,
+  `534x462`) and are now gone. `wp_create_image_subsizes()` /
+  `wp_generate_attachment_metadata()` would lose exactly the sizes
+  that have content references.
+- **No "is it smaller?" gate on derivatives.** That gate exists for the
+  parent (recompress-fallback in 27f614d). Once the parent is renamed,
+  the equivalent-named derivative *must* exist; always emit it.
+- **Hard-cropped sizes:** old metadata records dimensions but not crop
+  offset/focus. Resize from centre — same as WP's own regenerate. Docs
+  note required.
+- **Restore path:** the existing `Trash_Manager::restore()` does reverse
+  search-replace and is `filename_changed`-aware for the parent. The
+  backup record schema needs to grow a derivative set (or a separate
+  per-derivative backup record per parent rename) so restore reverses
+  the per-derivative trash + URL rewrites too.
+
+**Tasks:**
+
+- [ ] Snapshot pre-convert sizes in `Attachment_Processor` (only when the planned action is `convert` and the target MIME differs from source)
+- [ ] Per-size regenerate via `Image_Processor` (new method, or reuse `execute()` with an explicit-dimensions plan)
+- [ ] Per-derivative `Search_Replace` rewrite
+- [ ] Per-derivative trash backup; extend `_tri_backup` schema to carry a derivative list
+- [ ] Restore path: reverse the per-derivative rewrites and restore each derivative file
+- [ ] Bulk page log: one collapsed summary per row, e.g. `+9 derivatives renamed`
+- [ ] WP-CLI dry-run output: preview the per-derivative changes
+- [ ] Docs note on hard-cropped sizes resize-from-centre behaviour
 
 ---
 
